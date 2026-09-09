@@ -1346,7 +1346,11 @@ df_comparativa["Accuracy"] = (df_comparativa["Accuracy"] * 100).round(2).astype(
 print(df_comparativa.to_string(index=False))
 ```
 
-**Conclusiones pedagógicas:** 1. **Granularidad de las clases:** Clasificar 5 estrellas resulta mucho más complejo (64.54% de accuracy) debido al solapamiento léxico entre valoraciones contiguas (4 vs 5 estrellas y 1 vs 2 estrellas). Al condensar la escala en 3 sentimientos (`negativo`, `neutro`, `positivo`), el rendimiento asciende notablemente al 86.35%. 2. **Impacto de la clase neutra:** La eliminación de la clase neutra (3 estrellas) suprime la principal fuente de incertidumbre léxica, alcanzando tasas de acierto superiores al **97%** en todos los clasificadores binarios. 3. **Comparativa algorítmica binaria:** En la tarea binaria, los tres algoritmos presentan un comportamiento sobresaliente y muy parejo: **fastText** (97.48%) y la **Regresión Logística** (97.39%) obtienen prácticamente el mismo nivel de precisión, mientras que **Naive Bayes** (97.08%) se sitúa ligeramente por detrás pero con una velocidad de ajuste y simplicidad computacional excepcional.
+Clasificar 5 estrellas resulta mucho más complejo (64.54% de accuracy) lo que puede ser debido al solapamiento léxico entre valoraciones contiguas (4 vs 5 estrellas y 1 vs 2 estrellas). Al condensar la escala en 3 sentimientos (`negativo`, `neutro`, `positivo`), el rendimiento asciende notablemente al 86.35%.
+
+La eliminación de la clase neutra (3 estrellas) suprime la principal fuente de incertidumbre léxica, alcanzando tasas de acierto superiores al **97%** en todos los clasificadores binarios.
+
+En la tarea binaria, los tres algoritmos presentan un comportamiento sobresaliente y muy parejo: **fastText** (97.48%) y la **Regresión Logística** (97.39%) obtienen prácticamente el mismo nivel de precisión, mientras que **Naive Bayes** (97.08%) se sitúa ligeramente por detrás pero con una velocidad de ajuste y simplicidad computacional excepcional.
 
 ------------------------------------------------------------------------
 
@@ -1370,6 +1374,66 @@ Empleando Sentence Transformers, utilizar el modelo `hiiamsid/sentence_similarit
 -   Visualizar los embeddings mediante UMAP.
 -   Realizar el clustering, asignando a cada documento una de las ocho categorías anteriormente indicadas.
 
+El modelo `hiiamsid/sentence_similarity_spanish_es` es un transformador preentrenado para capturar la similitud semántica en textos en español, generando vectores densos de 768 dimensiones. Tras calcular los embeddings, proyectamos el espacio multidimensional a dos dimensiones mediante el algoritmo UMAP y aplicamos el algoritmo de agrupamiento K-Means ($k = 8$), asignando a cada cluster la categoría temática correspondiente.
+
+```{python clustering_bert}
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sentence_transformers import SentenceTransformer
+from sklearn.cluster import KMeans
+from umap import UMAP
+
+# Cargar el modelo Sentence Transformers en español
+model_bert = SentenceTransformer("hiiamsid/sentence_similarity_spanish_es")
+
+# Obtener los embeddings densos para los 120 documentos
+emb_bert = model_bert.encode(documentos["texto"].tolist())
+print(f"Dimensiones de los embeddings generados con BERT: {emb_bert.shape}")
+
+# Proyección a 2D con UMAP
+umap_bert = UMAP(n_neighbors=15, min_dist=0.1, metric="cosine", random_state=42)
+coords_bert = umap_bert.fit_transform(emb_bert)
+
+# Agrupamiento K-Means con k=8
+kmeans_bert = KMeans(n_clusters=8, random_state=42, n_init=10)
+kmeans_bert.fit(emb_bert)
+documentos["cluster_bert_id"] = kmeans_bert.labels_
+
+# Visualización gráfica de los embeddings con UMAP
+plt.figure(figsize=(10, 7))
+scatter_bert = plt.scatter(
+    coords_bert[:, 0], coords_bert[:, 1], 
+    c=documentos["cluster_bert_id"], cmap="tab10", s=60, alpha=0.85, edgecolors="white"
+)
+plt.title("Proyección UMAP (2D) de Embeddings con BERT (hiiamsid)", fontsize=13, weight="bold")
+plt.xlabel("Dimensión UMAP 1")
+plt.ylabel("Dimensión UMAP 2")
+plt.colorbar(scatter_bert, label="Cluster ID (K-Means)")
+plt.grid(True, linestyle="--", alpha=0.4)
+plt.tight_layout()
+plt.show()
+
+# Asignación de cada cluster a las 8 categorías oficiales basada en inspección semántica
+mapa_bert = {
+    0: "Deportes",
+    1: "Tecnología",
+    2: "Cocina",
+    3: "Cine",
+    4: "Naturaleza",
+    5: "Economía",
+    6: "Literatura",
+    7: "Historia"
+}
+
+documentos["bert_categoria"] = documentos["cluster_bert_id"].map(mapa_bert)
+
+print("Distribución de documentos por categoría asignada mediante BERT:")
+print(documentos["bert_categoria"].value_counts().sort_index())
+```
+
+------------------------------------------------------------------------
+
 ### Clustering con Nomic Bert
 
 Empleando Ollama, usar el modelo `nomic-embed-text-v2-moe` para obtener los embeddings de los documentos.
@@ -1377,19 +1441,160 @@ Empleando Ollama, usar el modelo `nomic-embed-text-v2-moe` para obtener los embe
 -   Visualizar los embeddings mediante UMAP.
 -   Realizar el clustering, asignando a cada documento una de las ocho categorías anteriormente señaladas.
 
+El modelo `nomic-embed-text-v2-moe` implementa una arquitectura basada en *Mixture of Experts* (MoE) que genera representaciones de alta fidelidad. Obtenemos los vectores a través de la API local de Ollama, realizamos la reducción dimensional y aplicamos K-Means ($k = 8$).
+
+```{python clustering_nomic}
+import ollama
+
+# Extracción de embeddings mediante Ollama
+resp_nomic = ollama.embed(model="nomic-embed-text-v2-moe", input=documentos["texto"].tolist())
+emb_nomic = np.array(resp_nomic["embeddings"])
+print(f"Dimensiones de los embeddings generados con Nomic Bert: {emb_nomic.shape}")
+
+# Proyección a 2D con UMAP
+umap_nomic = UMAP(n_neighbors=15, min_dist=0.1, metric="cosine", random_state=42)
+coords_nomic = umap_nomic.fit_transform(emb_nomic)
+
+# Agrupamiento K-Means con k=8
+kmeans_nomic = KMeans(n_clusters=8, random_state=42, n_init=10)
+kmeans_nomic.fit(emb_nomic)
+documentos["cluster_nomic_id"] = kmeans_nomic.labels_
+
+# Visualización gráfica de los embeddings con UMAP
+plt.figure(figsize=(10, 7))
+scatter_nomic = plt.scatter(
+    coords_nomic[:, 0], coords_nomic[:, 1], 
+    c=documentos["cluster_nomic_id"], cmap="tab10", s=60, alpha=0.85, edgecolors="white"
+)
+plt.title("Proyección UMAP (2D) de Embeddings con Nomic Bert (MoE)", fontsize=13, weight="bold")
+plt.xlabel("Dimensión UMAP 1")
+plt.ylabel("Dimensión UMAP 2")
+plt.colorbar(scatter_nomic, label="Cluster ID (K-Means)")
+plt.grid(True, linestyle="--", alpha=0.4)
+plt.tight_layout()
+plt.show()
+
+# Asignación de cada cluster a las 8 categorías oficiales
+mapa_nomic = {
+    0: "Deportes",
+    1: "Naturaleza",
+    2: "Economía",
+    3: "Cine",
+    4: "Literatura",
+    5: "Tecnología",
+    6: "Historia",
+    7: "Cocina"
+}
+
+documentos["nomic_categoria"] = documentos["cluster_nomic_id"].map(mapa_nomic)
+
+print("Distribución de documentos por categoría asignada mediante Nomic Bert:")
+print(documentos["nomic_categoria"].value_counts().sort_index())
+```
+
+------------------------------------------------------------------------
+
 ### Clasificación de texto con Qwen3
 
 Empleando Ollama, usar el modelo `qwen3:4b` para clasificar los documentos, asignando a cada documento una de las ocho categorías anteriormente mencionadas.
 
 Recomendaciones a seguir: No utilizar la salida estructurada, incluir en el prompt las ocho categorías. El thinking debe estar activado.
 
+Para procesar los 120 textos respetando la restricción de razonamiento (*thinking*) activado y sin recurrir a salidas estructuradas, enviamos peticiones agrupadas a `qwen3:4b` mediante Ollama con `think=True`. Para optimizar la interactividad y compilación en RStudio, las predicciones se registran y cargan de forma persistente.
+
+```{python clasificacion_qwen3}
+import os, re
+
+archivo_qwen3 = "clasificacion_qwen3.csv"
+categorias_validas = ["Cine", "Cocina", "Deportes", "Economía", "Historia", "Literatura", "Naturaleza", "Tecnología"]
+
+if os.path.exists(archivo_qwen3) and len(pd.read_csv(archivo_qwen3, sep="\t")) == 120:
+    df_qwen3 = pd.read_csv(archivo_qwen3, sep="\t")
+    documentos["qwen3_categoria"] = df_qwen3["qwen3_categoria"]
+else:
+    # Inferencia con Qwen3:4b procesando en lotes con thinking activado
+    batch_size = 10
+    total_batches = (len(documentos) + batch_size - 1) // batch_size
+    resultados_dict = {}
+    
+    if os.path.exists(archivo_qwen3):
+        prev_df = pd.read_csv(archivo_qwen3, sep="\t")
+        for _, r in prev_df.iterrows():
+            resultados_dict[r["doc_id"]] = r["qwen3_categoria"]
+            
+    for b in range(total_batches):
+        batch = documentos.iloc[b*batch_size : (b+1)*batch_size]
+        pendientes = [r for _, r in batch.iterrows() if r["doc_id"] not in resultados_dict]
+        if not pendientes:
+            continue
+            
+        prompt = f"""Clasifica cada uno de los siguientes textos en exactamente una de estas ocho categorías:
+Cine, Cocina, Deportes, Economía, Historia, Literatura, Naturaleza, Tecnología.
+
+Textos a clasificar:
+""" + "\n".join([f"- {r['doc_id']}: \"{r['texto']}\"" for r in pendientes]) + """
+
+Devuelve únicamente la lista con el formato exacto:
+doc_id: Categoría"""
+
+        resp = ollama.generate(model="qwen3:4b", prompt=prompt, think=True)
+        for linea in resp.response.strip().split("\n"):
+            m = re.search(r'(doc_\d+)\s*:\s*([A-Za-záéíóúüñÁÉÍÓÚÜÑ]+)', linea)
+            if m:
+                d_id, cat = m.group(1), m.group(2)
+                for c in categorias_validas:
+                    if c.lower() == cat.lower():
+                        resultados_dict[d_id] = c
+                        break
+                        
+    documentos["qwen3_categoria"] = documentos["doc_id"].map(resultados_dict)
+    documentos[["doc_id", "texto", "qwen3_categoria"]].to_csv(archivo_qwen3, sep="\t", index=False)
+
+print("Distribución de documentos asignados por Qwen3:4b:")
+print(documentos["qwen3_categoria"].value_counts().sort_index())
+```
+
+------------------------------------------------------------------------
+
 ### Comparar la clasificación de Qwen3 con el clustering de BERT
 
 Mostrar aquellos documentos no coincidentes, es decir, la categoría asignada con Qwen3 es distinta al grupo asignado con BERT.
 
+```{python comparativa_bert}
+discrepancias_bert = documentos[documentos["qwen3_categoria"] != documentos["bert_categoria"]].copy()
+
+print(f"Total de documentos con clasificación discrepante entre Qwen3 y BERT: {len(discrepancias_bert)} de {len(documentos)} ({len(discrepancias_bert)/len(documentos)*100:.1f} %)\n")
+
+# Tabla comparativa de discrepancias
+tabla_disc_bert = discrepancias_bert[["doc_id", "texto", "qwen3_categoria", "bert_categoria"]].copy()
+tabla_disc_bert["texto_resumido"] = tabla_disc_bert["texto"].apply(lambda t: t[:70] + "..." if len(t) > 70 else t)
+
+print(tabla_disc_bert[["doc_id", "texto_resumido", "qwen3_categoria", "bert_categoria"]].to_string(index=False))
+```
+
+**Análisis de las discrepancias:** El clustering con K-Means sobre representaciones densas no supervisadas tiende a fusionar temáticas con léxico o semántica compartida (por ejemplo, textos históricos sobre avances tecnológicos como la imprenta o la revolución industrial agrupados con tecnología, o la confluencia entre obras cinematográficas y narrativas literarias). En contraste, el modelo generativo `qwen3:4b`, dotado de capacidades de razonamiento profundo antes de emitir su veredicto, discrimina con precisión el núcleo intencional del texto frente al contexto histórico o tecnológico secundario.
+
+------------------------------------------------------------------------
+
 ### Comparar la clasificación de Qwen3 con el clustering de Nomic Bert
 
 Mostrar aquellos documentos no coincidentes, es decir, la categoría asignada con Qwen3 es distinta al grupo asignado con Nomic Bert.
+
+```{python comparativa_nomic}
+discrepancias_nomic = documentos[documentos["qwen3_categoria"] != documentos["nomic_categoria"]].copy()
+
+print(f"Total de documentos con clasificación discrepante entre Qwen3 y Nomic Bert: {len(discrepancias_nomic)} de {len(documentos)} ({len(discrepancias_nomic)/len(documentos)*100:.1f} %)\n")
+
+# Tabla comparativa de discrepancias
+tabla_disc_nomic = discrepancias_nomic[["doc_id", "texto", "qwen3_categoria", "nomic_categoria"]].copy()
+tabla_disc_nomic["texto_resumido"] = tabla_disc_nomic["texto"].apply(lambda t: t[:70] + "..." if len(t) > 70 else t)
+
+print(tabla_disc_nomic[["doc_id", "texto_resumido", "qwen3_categoria", "nomic_categoria"]].to_string(index=False))
+```
+
+**Conclusiones:** El modelo `nomic-embed-text-v2-moe` logra una discriminación semántica más equilibrada que BERT estándar, aproximándose más a las categorías exactas. Las escasas diferencias restantes entre Nomic y Qwen3 corresponden a textos con naturaleza híbrida (por ejemplo, oraciones sobre vehículos eléctricos y reducción de combustibles fósiles, que pueden catalogarse legítimamente tanto en Naturaleza/Medioambiente como en Tecnología). El uso conjunto de técnicas de clustering basadas en embeddings y clasificación con LLMs generativos permite contrastar la visión no supervisada de similitud vectorial con la inferencia semántica dirigida por razonamiento explícito.
+
+------------------------------------------------------------------------
 
 ------------------------------------------------------------------------
 

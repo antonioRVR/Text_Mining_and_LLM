@@ -1,0 +1,121 @@
+doc_id	texto	qwen3_categoria
+doc_1	Los métodos de autenticación biométrica están mejorando la seguridad de los dispositivos.	Tecnología
+doc_2	La invención de la imprenta revolucionó la difusión del conocimiento.	Historia
+doc_3	La diversificación es clave para gestionar eficazmente el riesgo de inversión.	Economía
+doc_4	El cine mudo fue reemplazado por el sonido a finales de los años 20.	Cine
+doc_5	La Revolución Industrial transformó las economías y sociedades de todo el mundo.	Historia
+doc_6	El árbitro señaló una falta por golpear la red con la raqueta.	Deportes
+doc_7	Los inversores siguen de cerca los cambios en las tasas de interés de la Reserva Federal.	Economía
+doc_8	La tecnología 5G ofrece velocidades de descarga hasta 100 veces superiores a 4G, habilitando servicios de realidad virtual en tiempo real.	Tecnología
+doc_9	El salario mínimo es una política para garantizar un ingreso básico a los trabajadores.	Economía
+doc_10	El helado de vainilla se hace batiendo y congelando una mezcla de yemas, azúcar y crema.	Cocina
+doc_11	La caída del Imperio Romano de Occidente se sitúa en el año 476 d.C.	Historia
+doc_12	Los bosques frondosos actúan como pulmones del planeta, filtrando el aire que respiramos.	Naturaleza
+doc_13	"""Titanic"" recaudó, en todo el mundo, más de 2.000 millones de dólares en taquilla."	Cine
+doc_14	El sushi nigiri se compone de arroz vinagrado y una loncha de pescado crudo.	Cocina
+doc_15	"En ""El Padrino"", Michael Corleone asume el control de la familia mafiosa."	Cine
+doc_16	"""Frankenstein"" de Mary Shelley, es considerada la primera novela de ciencia ficción."	Literatura
+doc_17	El baloncesto nació en 1891 en Springfield, Massachusetts.	Deportes
+doc_18	El gazpacho es una sopa fría de tomate, pepino y pimiento típica de Andalucía.	Cocina
+doc_19	Una recesión se define como dos trimestres consecutivos de crecimiento negativo del PIB.	Economía
+doc_20	El internet de las cosas (IoT) permite que electrodomésticos se comuniquen entre sí mediante redes inalámbricas.	Tecnología
+doc_21	Los vehículos eléctricos reducen la dependencia de combustibles fósiles y disminuyen la emisión de CO₂.	Tecnología
+doc_22	Usain Bolt estableció el récord mundial de los 100 m en 9,58 s.	Deportes
+doc_23	El producto interno bruto (PIB) mide el valor total de los bienes y servicios producidos.	Economía
+doc_24	Los criptomonedas, como Bitcoin, emplean tecnología blockchain para registrar transacciones de forma segura y descentralizada.	Tecnología
+doc_25	La civilización maya destacó por sus conocimientos astronómicos y su escritura jeroglífica.	Historia
+doc_26	"""Mad Max: Furia en la carretera"" ganó 6 Óscar, sin incluir el de Mejor Película"	Cine
+doc_27	Los churros se fríen en aceite caliente y se espolvorean con azúcar.	Cocina
+doc_28	La migración de las mariposas monarca atraviesa América del Norte cada otoño.	Naturaleza
+doc_29	El descubrimiento de América se atribuye a Cristóbal Colón en 1492.	Historia
+doc_30	El tipo de cambio determina cuántas unidades de una moneda se obtienen por otra.	Economía
+doc_31	Los precios de las criptomonedas han sido extremadamente volátiles este año.	Tecnología
+doc_32	Los visores de realidad virtual son cada vez más ligeros, potentes, accesibles y cómodos.	Tecnología
+doc_33	"""La Metamorfosis"" relata la transformación de Gregorio Samsa."	Literatura
+doc_34	"La comedia ""La fiera de mi niña"" fue dirigida por Howard Hawks (1938)."	Cine
+doc_35	La técnica de sous‑vide consiste en cocinar alimentos al vacío a baja temperatura.	Cocina
+doc_36	Los bonos del estado son instrumentos de deuda pública.	Economía
+doc_37	La independencia de México se proclamó el 16 de septiembre de 1810.	Historia
+doc_38	Los glaciares son reservas de agua dulce que retroceden con el calentamiento global.	Naturaleza
+doc_39	La inteligencia artificial está transformando la forma en que se analizan grandes volúmenes de datos.	Tecnología
+doc_40	Los fondos cotizados (ETF) son instrumentos de inversión que combinan la diversificación de los fondos de inversión con la flexibilidad de las acciones.	Economía
+doc_41	Los ecosistemas marinos producen más del 50 % del oxígeno terrestre.	Naturaleza
+doc_42	Cary Grant es considerado uno de los más grandes actores de la historia de Hollywood, sinónimo de elegancia, sofisticación y encanto.	Cine
+doc_43	La economía mundial se está recuperando de la pandemia, pero persisten los desafíos.	Economía
+doc_44	"""Cien años de soledad"" es la obra maestra de Gabriel García Márquez."	Literatura
+doc_45	El secreto de un risotto perfecto está en añadir el caldo poco a poco y remover constantemente.	Cocina
+doc_46	La Revolución Francesa de 1789 marcó el fin del Antiguo Régimen.	Historia
+doc_47	El Festival de Cannes premia cada año una película con la Palma de Oro	Cine
+doc_48	La banca central regula la oferta monetaria para controlar la inflación.	Economía
+doc_49	"""La casa de los espíritus"" combina realismo mágico y política chilena."	Literatura
+doc_50	"""El viejo y el mar"" narra la lucha de un pescador cubano con un marlín gigante."	Literatura
+doc_51	Los Juegos Olímpicos de Tokio 2020 se pospusieron por la pandemia.	Deportes
+doc_52	El entrenador pidió tiempo muerto para reorganizar la presión alta.	Deportes
+doc_53	La impresión 3D está revolucionando la fabricación de piezas personalizadas en sectores como la medicina y la aeronáutica.	Tecnología
+doc_54	Los osos polares están adaptados a vivir en regiones árticas extremadamente frías.	Naturaleza
+doc_55	"Ridley Scott dirigió ""Blade Runner"", una obra maestra del cine de ciencia‑ficción"	Cine
+doc_56	El curry tailandés combina leche de coco, pasta de chile y hierbas aromáticas.	Cocina
+doc_57	La Revolución Rusa de 1917 dio origen a la Unión Soviética.	Historia
+doc_58	"""Don Quijote de la Mancha"" es considerada la primera novela moderna."	Literatura
+doc_59	Los bosques tropicales albergan la mayor biodiversidad del planeta.	Naturaleza
+doc_60	Los coches de Fórmula 1 están construidos con compuestos de fibra de carbono y materiales ultraligeros.	Tecnología
+doc_61	Los manglares actúan como filtros de contaminantes y zonas de cría para peces.	Naturaleza
+doc_62	La Guerra Fría se caracterizó por la tensión política entre Estados Unidos y la Unión Soviética.	Historia
+doc_63	Los ríos transportan vida, alimentando ecosistemas y proporcionando agua dulce.	Naturaleza
+doc_64	El software de código abierto permite a desarrolladores de todo el mundo colaborar y mejorar aplicaciones sin restricciones de licencia.	Tecnología
+doc_65	La masa madre aporta acidez y aroma al pan artesanal.	Cocina
+doc_66	El índice de pobreza mide la proporción de la población con ingresos inferiores al umbral.	Economía
+doc_67	"""El señor de los anillos"" es una épica de fantasía escrita por J.R.R. Tolkien."	Literatura
+doc_68	La Segunda Guerra Mundial fue un conflicto global que transformó las relaciones internacionales.	Historia
+doc_69	El cine de autor se caracteriza por la visión personal del director.	Cine
+doc_70	"El protagonista de ""Casablanca"" pronuncia la famosa frase: ""Siempre nos quedará París"""	Cine
+doc_71	Los smartphones actuales utilizan procesadores de ocho núcleos para mejorar el rendimiento multitarea.	Tecnología
+doc_72	"""Orgullo y prejuicio"" fue escrito por Jane Austen en 1813."	Literatura
+doc_73	El tenis se juega en sets y cada set se decide al ganar al menos seis juegos.	Deportes
+doc_74	Los bosques boreales están dominados por coníferas como el picea y el abeto.	Naturaleza
+doc_75	Los paneles solares de película delgada son más ligeros y flexibles que los tradicionales de silicio cristalino, facilitando su integración en edificios.	Tecnología
+doc_76	"Alfred Hitchcock es conocido como el ""maestro del suspense"""	Cine
+doc_77	"""Hamlet"" es una tragedia escrita por William Shakespeare."	Literatura
+doc_78	"""La divina comedia"" de Dante Alighieri recorre el Infierno, el Purgatorio y el Paraíso."	Literatura
+doc_79	El director Quentin Tarantino es conocido por sus giros inesperados en la trama.	Cine
+doc_80	El ramen tradicional japonés se sirve con caldo, fideos y toppings variados.	Cocina
+doc_81	El mediocampista marcó un gol de larga distancia desde los 30 m.	Deportes
+doc_82	El déficit fiscal ocurre cuando el gasto público supera a los ingresos.	Economía
+doc_83	La inflación anual de un país mide el aumento generalizado de precios.	Economía
+doc_84	"La Carta Magna fue impuesta en el año 1215 por los barones al rey Juan I, conocido como ""Juan sin Tierra""."	Historia
+doc_85	Preservar el medio ambiente es proteger el futuro de todas las especies, incluida la nuestra, y garantizar un equilibrio sostenible para el planeta.	Naturaleza
+doc_86	La conquista de los incas por Francisco Pizarro, ocurrió en 1532.	Historia
+doc_87	La Guerra de los Cien Años enfrentó a Inglaterra y Francia entre 1337 y 1453.	Historia
+doc_88	El surf se practica sobre olas en playas de todo el mundo.	Deportes
+doc_89	"""La Casa de Papel"" se convirtió en un éxito global de Netflix."	Cine
+doc_90	Una buena salsa bechamel requiere mantequilla, harina y leche caliente.	Cocina
+doc_91	Las empanadas gallegas se rellenan tradicionalmente con atún, pimiento y huevo.	Cocina
+doc_92	El delantero anotó con un tiro cruzado desde fuera del área.	Deportes
+doc_93	"""El Principito"" es una fábula filosófica de Antoine de Saint‑Exupéry."	Literatura
+doc_94	El mercado de valores se recuperó tras los informes positivos de ganancias.	Economía
+doc_95	"""Moby Dick"" narra la obsesión del capitán Ahab."	Literatura
+doc_96	El asado argentino se cocina lentamente sobre brasas de leña.	Cocina
+doc_97	Los ríos forman valles al erosionar su cauce a lo largo de millones de años.	Naturaleza
+doc_98	El fútbol es el deporte más popular en América Latina y Europa.	Deportes
+doc_99	Los asistentes virtuales, como Alexa o Google Assistant, procesan voz natural para ejecutar tareas y responder preguntas del usuario.	Tecnología
+doc_100	El Muro de Berlín fue derribado el 9 de noviembre de 1989.	Historia
+doc_101	Los sistemas de reconocimiento facial utilizan algoritmos de aprendizaje profundo para identificar a personas en tiempo real.	Tecnología
+doc_102	"La saga de ""Harry Potter"" convirtió a J.K. Rowling en una autora de culto."	Literatura
+doc_103	Los servidores en la nube ofrecen escalabilidad y flexibilidad para empresas que necesitan recursos informáticos bajo demanda.	Tecnología
+doc_104	Los corales forman arrecifes que protegen las costas de la erosión.	Naturaleza
+doc_105	La natación requiere técnicas de respiración y brazada coordinadas.	Deportes
+doc_106	Los arrecifes de coral albergan una biodiversidad increíble y son indicadores de la salud de los océanos.	Naturaleza
+doc_107	Para hacer una tortilla española necesitas patatas, huevo y cebolla.	Cocina
+doc_108	El críquet es el deporte nacional de India y Pakistán.	Deportes
+doc_109	"El film ""Parásitos"" ganó el Óscar a la Mejor Película en 2020."	Cine
+doc_110	La polinización de las flores depende principalmente de abejas e insectos.	Naturaleza
+doc_111	"""La Odisea"" es un poema épico atribuido a Homero."	Literatura
+doc_112	La Primera Guerra Mundial concluyó con el Tratado de Versalles en 1919.	Historia
+doc_113	El rugby se caracteriza por la continuidad del juego y el contacto físico.	Deportes
+doc_114	El maratón cubre una distancia de 42,195 km.	Deportes
+doc_115	La realidad aumentada (AR) superpone información digital sobre el entorno real, mejorando la experiencia de usuarios en juegos y capacitación.	Tecnología
+doc_116	El soufflé de queso se infla en el horno gracias al aire atrapado en la masa.	Cocina
+doc_117	"""El Laberinto del Fauno"" combina fantasía y realidad en la posguerra española"	Literatura
+doc_118	El clima de la tundra se caracteriza por inviernos largos y veranos breves.	Naturaleza
+doc_119	"""Fahrenheit 451"" describe una sociedad donde los libros están prohibidos."	Literatura
+doc_120	Para caramelizar una cebolla se cocina a fuego lento hasta que adquiera color dorado.	Cocina
