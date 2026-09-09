@@ -1,0 +1,222 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 600px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+             #loadingBar {
+                 position:absolute;
+                 top:0px;
+                 left:0px;
+                 width: 100%;
+                 height: 600px;
+                 background-color:rgba(200,200,200,0.8);
+                 -webkit-transition: all 0.5s ease;
+                 -moz-transition: all 0.5s ease;
+                 -ms-transition: all 0.5s ease;
+                 -o-transition: all 0.5s ease;
+                 transition: all 0.5s ease;
+                 opacity:1;
+             }
+
+             #bar {
+                 position:absolute;
+                 top:0px;
+                 left:0px;
+                 width:20px;
+                 height:20px;
+                 margin:auto auto auto auto;
+                 border-radius:11px;
+                 border:2px solid rgba(30,30,30,0.05);
+                 background: rgb(0, 173, 246); /* Old browsers */
+                 box-shadow: 2px 0px 4px rgba(0,0,0,0.4);
+             }
+
+             #border {
+                 position:absolute;
+                 top:10px;
+                 left:10px;
+                 width:500px;
+                 height:23px;
+                 margin:auto auto auto auto;
+                 box-shadow: 0px 0px 4px rgba(0,0,0,0.2);
+                 border-radius:10px;
+             }
+
+             #text {
+                 position:absolute;
+                 top:8px;
+                 left:530px;
+                 width:30px;
+                 height:50px;
+                 margin:auto auto auto auto;
+                 font-size:22px;
+                 color: #000000;
+             }
+
+             div.outerBorder {
+                 position:relative;
+                 top:400px;
+                 width:600px;
+                 height:44px;
+                 margin:auto auto auto auto;
+                 border:8px solid rgba(0,0,0,0.1);
+                 background: rgb(252,252,252); /* Old browsers */
+                 background: -moz-linear-gradient(top,  rgba(252,252,252,1) 0%, rgba(237,237,237,1) 100%); /* FF3.6+ */
+                 background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(252,252,252,1)), color-stop(100%,rgba(237,237,237,1))); /* Chrome,Safari4+ */
+                 background: -webkit-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* Chrome10+,Safari5.1+ */
+                 background: -o-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* Opera 11.10+ */
+                 background: -ms-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* IE10+ */
+                 background: linear-gradient(to bottom,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* W3C */
+                 filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fcfcfc', endColorstr='#ededed',GradientType=0 ); /* IE6-9 */
+                 border-radius:72px;
+                 box-shadow: 0px 0px 10px rgba(0,0,0,0.2);
+             }
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+            <div id="loadingBar">
+              <div class="outerBorder">
+                <div id="text">0%</div>
+                <div id="border">
+                  <div id="bar"></div>
+                </div>
+              </div>
+            </div>
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "#8ecae6", "font": {"color": "#333333"}, "id": "museo", "label": "museo", "shape": "dot", "title": "museo"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "prado", "label": "prado", "shape": "dot", "title": "prado"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "isabel", "label": "isabel", "shape": "dot", "title": "isabel"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "farnesio", "label": "farnesio", "shape": "dot", "title": "farnesio"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "juan", "label": "juan", "shape": "dot", "title": "juan"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "mu\u00f1oz", "label": "mu\u00f1oz", "shape": "dot", "title": "mu\u00f1oz"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "paolo", "label": "paolo", "shape": "dot", "title": "paolo"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "veronese", "label": "veronese", "shape": "dot", "title": "veronese"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "femenino", "label": "femenino", "shape": "dot", "title": "femenino"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "1528-1588", "label": "1528-1588", "shape": "dot", "title": "1528-1588"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "guadalupe", "label": "guadalupe", "shape": "dot", "title": "guadalupe"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "m\u00e9xico", "label": "m\u00e9xico", "shape": "dot", "title": "m\u00e9xico"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "historias", "label": "historias", "shape": "dot", "title": "historias"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "arte", "label": "arte", "shape": "dot", "title": "arte"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "espa\u00f1a", "label": "espa\u00f1a", "shape": "dot", "title": "espa\u00f1a"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "antonio", "label": "antonio", "shape": "dot", "title": "antonio"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "raphael", "label": "raphael", "shape": "dot", "title": "raphael"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "mengs", "label": "mengs", "shape": "dot", "title": "mengs"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "manera", "label": "manera", "shape": "dot", "title": "manera"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "italia", "label": "italia", "shape": "dot", "title": "italia"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "g\u00f3tico", "label": "g\u00f3tico", "shape": "dot", "title": "g\u00f3tico"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "mediterr\u00e1neo", "label": "mediterr\u00e1neo", "shape": "dot", "title": "mediterr\u00e1neo"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "1320-1420", "label": "1320-1420", "shape": "dot", "title": "1320-1420"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "reina", "label": "reina", "shape": "dot", "title": "reina"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "exposici\u00f3n", "label": "exposici\u00f3n", "shape": "dot", "title": "exposici\u00f3n"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "visitas", "label": "visitas", "shape": "dot", "title": "visitas"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "guiada", "label": "guiada", "shape": "dot", "title": "guiada"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "v\u00eddeo", "label": "v\u00eddeo", "shape": "dot", "title": "v\u00eddeo"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "conferencia", "label": "conferencia", "shape": "dot", "title": "conferencia"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "1728-1779", "label": "1728-1779", "shape": "dot", "title": "1728-1779"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "colecci\u00f3n", "label": "colecci\u00f3n", "shape": "dot", "title": "colecci\u00f3n"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "siglo", "label": "siglo", "shape": "dot", "title": "siglo"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "xxi", "label": "xxi", "shape": "dot", "title": "xxi"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "tan", "label": "tan", "shape": "dot", "title": "tan"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "septiembre", "label": "septiembre", "shape": "dot", "title": "septiembre"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "exposiciones", "label": "exposiciones", "shape": "dot", "title": "exposiciones"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "taquilla", "label": "taquilla", "shape": "dot", "title": "taquilla"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "entradas", "label": "entradas", "shape": "dot", "title": "entradas"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "horario", "label": "horario", "shape": "dot", "title": "horario"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "obra", "label": "obra", "shape": "dot", "title": "obra"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "artista", "label": "artista", "shape": "dot", "title": "artista"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "espa\u00f1ol", "label": "espa\u00f1ol", "shape": "dot", "title": "espa\u00f1ol"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "ingl\u00e9s", "label": "ingl\u00e9s", "shape": "dot", "title": "ingl\u00e9s"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "1692-1766", "label": "1692-1766", "shape": "dot", "title": "1692-1766"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "informaci\u00f3n", "label": "informaci\u00f3n", "shape": "dot", "title": "informaci\u00f3n"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "miguel", "label": "miguel", "shape": "dot", "title": "miguel"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "falomir", "label": "falomir", "shape": "dot", "title": "falomir"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "maestro", "label": "maestro", "shape": "dot", "title": "maestro"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "patrocinio", "label": "patrocinio", "shape": "dot", "title": "patrocinio"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "exclusivo", "label": "exclusivo", "shape": "dot", "title": "exclusivo"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "virtual", "label": "virtual", "shape": "dot", "title": "virtual"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "xix", "label": "xix", "shape": "dot", "title": "xix"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "cuadro", "label": "cuadro", "shape": "dot", "title": "cuadro"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "hambre", "label": "hambre", "shape": "dot", "title": "hambre"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "fin", "label": "fin", "shape": "dot", "title": "fin"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "semana", "label": "semana", "shape": "dot", "title": "semana"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "fotograf\u00eda", "label": "fotograf\u00eda", "shape": "dot", "title": "fotograf\u00eda"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "memoria", "label": "memoria", "shape": "dot", "title": "memoria"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "compartido", "label": "compartido", "shape": "dot", "title": "compartido"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "multiplicado", "label": "multiplicado", "shape": "dot", "title": "multiplicado"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "historia", "label": "historia", "shape": "dot", "title": "historia"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "xviii", "label": "xviii", "shape": "dot", "title": "xviii"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "amigos", "label": "amigos", "shape": "dot", "title": "amigos"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "iii", "label": "iii", "shape": "dot", "title": "iii"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "alt\u00edsima", "label": "alt\u00edsima", "shape": "dot", "title": "alt\u00edsima"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "resoluci\u00f3n", "label": "resoluci\u00f3n", "shape": "dot", "title": "resoluci\u00f3n"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "documental", "label": "documental", "shape": "dot", "title": "documental"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "itinerario", "label": "itinerario", "shape": "dot", "title": "itinerario"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "director", "label": "director", "shape": "dot", "title": "director"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "medio", "label": "medio", "shape": "dot", "title": "medio"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "comunicaci\u00f3n", "label": "comunicaci\u00f3n", "shape": "dot", "title": "comunicaci\u00f3n"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "colaboraci\u00f3n", "label": "colaboraci\u00f3n", "shape": "dot", "title": "colaboraci\u00f3n"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "felipe", "label": "felipe", "shape": "dot", "title": "felipe"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "iv", "label": "iv", "shape": "dot", "title": "iv"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "imagen", "label": "imagen", "shape": "dot", "title": "imagen"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "degrain", "label": "degrain", "shape": "dot", "title": "degrain"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "influyente", "label": "influyente", "shape": "dot", "title": "influyente"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "cat\u00e1logo", "label": "cat\u00e1logo", "shape": "dot", "title": "cat\u00e1logo"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "clave", "label": "clave", "shape": "dot", "title": "clave"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "nacimiento", "label": "nacimiento", "shape": "dot", "title": "nacimiento"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "est\u00e9s", "label": "est\u00e9s", "shape": "dot", "title": "est\u00e9s"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "marzo", "label": "marzo", "shape": "dot", "title": "marzo"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "neoclasicismo", "label": "neoclasicismo", "shape": "dot", "title": "neoclasicismo"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "panor\u00e1micas", "label": "panor\u00e1micas", "shape": "dot", "title": "panor\u00e1micas"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "c\u00e1mara", "label": "c\u00e1mara", "shape": "dot", "title": "c\u00e1mara"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "a\u00f1o", "label": "a\u00f1o", "shape": "dot", "title": "a\u00f1o"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "canal", "label": "canal", "shape": "dot", "title": "canal"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "youtube", "label": "youtube", "shape": "dot", "title": "youtube"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "cristina", "label": "cristina", "shape": "dot", "title": "cristina"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "suecia", "label": "suecia", "shape": "dot", "title": "suecia"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "dal", "label": "dal", "shape": "dot", "title": "dal"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "pozzolo", "label": "pozzolo", "shape": "dot", "title": "pozzolo"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "enrico", "label": "enrico", "shape": "dot", "title": "enrico"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "maria", "label": "maria", "shape": "dot", "title": "maria"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "madrid", "label": "madrid", "shape": "dot", "title": "madrid"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "marquesa", "label": "marquesa", "shape": "dot", "title": "marquesa"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "santa", "label": "santa", "shape": "dot", "title": "santa"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "mues", "label": "mues", "shape": "dot", "title": "mues"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "orts", "label": "orts", "shape": "dot", "title": "orts"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "paula", "label": "paula", "shape": "dot", "title": "paula"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "pintor", "label": "pintor", "shape": "dot", "title": "pintor"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "cruz", "label": "cruz", "shape": "dot", "title": "cruz"}, {"color": "#8ecae6", "font": {"color": "#333333"}, "id": "universo", "label": "universo", "shape": "dot", "title": "universo"}]);
+                  edges = new vis.DataSet([{"color": "lightgray", "from": "museo", "to": "prado", "width": 7.0}, {"color": "lightgray", "from": "isabel", "to": "farnesio", "width": 1.7530864197530864}, {"color": "lightgray", "from": "juan", "to": "mu\u00f1oz", "width": 1.691358024691358}, {"color": "lightgray", "from": "paolo", "to": "veronese", "width": 1.6666666666666665}, {"color": "lightgray", "from": "prado", "to": "femenino", "width": 1.654320987654321}, {"color": "lightgray", "from": "veronese", "to": "1528-1588", "width": 1.617283950617284}, {"color": "lightgray", "from": "guadalupe", "to": "m\u00e9xico", "width": 1.4814814814814814}, {"color": "lightgray", "from": "historias", "to": "arte", "width": 1.4814814814814814}, {"color": "lightgray", "from": "mu\u00f1oz", "to": "historias", "width": 1.4814814814814814}, {"color": "lightgray", "from": "m\u00e9xico", "to": "espa\u00f1a", "width": 1.4444444444444444}, {"color": "lightgray", "from": "antonio", "to": "raphael", "width": 1.4074074074074074}, {"color": "lightgray", "from": "raphael", "to": "mengs", "width": 1.4074074074074074}, {"color": "lightgray", "from": "manera", "to": "italia", "width": 1.3950617283950617}, {"color": "lightgray", "from": "italia", "to": "espa\u00f1a", "width": 1.382716049382716}, {"color": "lightgray", "from": "espa\u00f1a", "to": "g\u00f3tico", "width": 1.3580246913580247}, {"color": "lightgray", "from": "g\u00f3tico", "to": "mediterr\u00e1neo", "width": 1.3580246913580247}, {"color": "lightgray", "from": "mediterr\u00e1neo", "to": "1320-1420", "width": 1.3580246913580247}, {"color": "lightgray", "from": "reina", "to": "isabel", "width": 1.3580246913580247}, {"color": "lightgray", "from": "exposici\u00f3n", "to": "paolo", "width": 1.3209876543209875}, {"color": "lightgray", "from": "visitas", "to": "guiada", "width": 1.3209876543209875}, {"color": "lightgray", "from": "v\u00eddeo", "to": "conferencia", "width": 1.308641975308642}, {"color": "lightgray", "from": "mengs", "to": "1728-1779", "width": 1.2962962962962963}, {"color": "lightgray", "from": "colecci\u00f3n", "to": "museo", "width": 1.2716049382716048}, {"color": "lightgray", "from": "prado", "to": "siglo", "width": 1.2716049382716048}, {"color": "lightgray", "from": "siglo", "to": "xxi", "width": 1.2469135802469136}, {"color": "lightgray", "from": "tan", "to": "guadalupe", "width": 1.1975308641975309}, {"color": "lightgray", "from": "septiembre", "to": "museo", "width": 1.1604938271604939}, {"color": "lightgray", "from": "prado", "to": "exposiciones", "width": 1.1481481481481481}, {"color": "lightgray", "from": "taquilla", "to": "museo", "width": 1.1481481481481481}, {"color": "lightgray", "from": "entradas", "to": "horario", "width": 1.1358024691358024}, {"color": "lightgray", "from": "obra", "to": "artista", "width": 1.1358024691358024}, {"color": "lightgray", "from": "espa\u00f1ol", "to": "ingl\u00e9s", "width": 1.123456790123457}, {"color": "lightgray", "from": "farnesio", "to": "1692-1766", "width": 1.123456790123457}, {"color": "lightgray", "from": "informaci\u00f3n", "to": "visitas", "width": 1.123456790123457}, {"color": "lightgray", "from": "miguel", "to": "falomir", "width": 1.123456790123457}, {"color": "lightgray", "from": "obra", "to": "maestro", "width": 1.123456790123457}, {"color": "lightgray", "from": "patrocinio", "to": "exclusivo", "width": 1.123456790123457}, {"color": "lightgray", "from": "virtual", "to": "museo", "width": 1.123456790123457}, {"color": "lightgray", "from": "guiada", "to": "exposici\u00f3n", "width": 1.1111111111111112}, {"color": "lightgray", "from": "obra", "to": "colecci\u00f3n", "width": 1.1111111111111112}, {"color": "lightgray", "from": "siglo", "to": "xix", "width": 1.1111111111111112}, {"color": "lightgray", "from": "guiada", "to": "colecci\u00f3n", "width": 1.0987654320987654}, {"color": "lightgray", "from": "cuadro", "to": "hambre", "width": 1.0864197530864197}, {"color": "lightgray", "from": "fin", "to": "semana", "width": 1.0864197530864197}, {"color": "lightgray", "from": "fotograf\u00eda", "to": "memoria", "width": 1.0864197530864197}, {"color": "lightgray", "from": "memoria", "to": "compartido", "width": 1.0864197530864197}, {"color": "lightgray", "from": "multiplicado", "to": "fotograf\u00eda", "width": 1.0864197530864197}, {"color": "lightgray", "from": "obra", "to": "historia", "width": 1.0864197530864197}, {"color": "lightgray", "from": "prado", "to": "multiplicado", "width": 1.0864197530864197}, {"color": "lightgray", "from": "siglo", "to": "xviii", "width": 1.0864197530864197}, {"color": "lightgray", "from": "amigos", "to": "museo", "width": 1.074074074074074}, {"color": "lightgray", "from": "femenino", "to": "iii", "width": 1.074074074074074}, {"color": "lightgray", "from": "alt\u00edsima", "to": "resoluci\u00f3n", "width": 1.0617283950617284}, {"color": "lightgray", "from": "arte", "to": "antonio", "width": 1.0617283950617284}, {"color": "lightgray", "from": "colecci\u00f3n", "to": "espa\u00f1ol", "width": 1.0617283950617284}, {"color": "lightgray", "from": "documental", "to": "prado", "width": 1.0617283950617284}, {"color": "lightgray", "from": "exposici\u00f3n", "to": "juan", "width": 1.0617283950617284}, {"color": "lightgray", "from": "itinerario", "to": "prado", "width": 1.0617283950617284}, {"color": "lightgray", "from": "resoluci\u00f3n", "to": "obra", "width": 1.0617283950617284}, {"color": "lightgray", "from": "director", "to": "museo", "width": 1.0493827160493827}, {"color": "lightgray", "from": "exposici\u00f3n", "to": "manera", "width": 1.0493827160493827}, {"color": "lightgray", "from": "femenino", "to": "isabel", "width": 1.0493827160493827}, {"color": "lightgray", "from": "medio", "to": "comunicaci\u00f3n", "width": 1.0493827160493827}, {"color": "lightgray", "from": "prado", "to": "colaboraci\u00f3n", "width": 1.0493827160493827}, {"color": "lightgray", "from": "prado", "to": "patrocinio", "width": 1.0493827160493827}, {"color": "lightgray", "from": "exposici\u00f3n", "to": "prado", "width": 1.037037037037037}, {"color": "lightgray", "from": "felipe", "to": "iv", "width": 1.037037037037037}, {"color": "lightgray", "from": "iii", "to": "reina", "width": 1.037037037037037}, {"color": "lightgray", "from": "imagen", "to": "alt\u00edsima", "width": 1.037037037037037}, {"color": "lightgray", "from": "ingl\u00e9s", "to": "taquilla", "width": 1.037037037037037}, {"color": "lightgray", "from": "mu\u00f1oz", "to": "degrain", "width": 1.037037037037037}, {"color": "lightgray", "from": "artista", "to": "influyente", "width": 1.0246913580246912}, {"color": "lightgray", "from": "cat\u00e1logo", "to": "exposici\u00f3n", "width": 1.0246913580246912}, {"color": "lightgray", "from": "clave", "to": "nacimiento", "width": 1.0246913580246912}, {"color": "lightgray", "from": "colecci\u00f3n", "to": "est\u00e9s", "width": 1.0246913580246912}, {"color": "lightgray", "from": "marzo", "to": "museo", "width": 1.0246913580246912}, {"color": "lightgray", "from": "nacimiento", "to": "neoclasicismo", "width": 1.0246913580246912}, {"color": "lightgray", "from": "panor\u00e1micas", "to": "imagen", "width": 1.0246913580246912}, {"color": "lightgray", "from": "prado", "to": "obra", "width": 1.0246913580246912}, {"color": "lightgray", "from": "prado", "to": "panor\u00e1micas", "width": 1.0246913580246912}, {"color": "lightgray", "from": "1528-1588", "to": "cat\u00e1logo", "width": 1.0123456790123457}, {"color": "lightgray", "from": "antonio", "to": "mu\u00f1oz", "width": 1.0123456790123457}, {"color": "lightgray", "from": "artista", "to": "c\u00e1mara", "width": 1.0123456790123457}, {"color": "lightgray", "from": "a\u00f1o", "to": "hambre", "width": 1.0123456790123457}, {"color": "lightgray", "from": "canal", "to": "youtube", "width": 1.0123456790123457}, {"color": "lightgray", "from": "cristina", "to": "suecia", "width": 1.0123456790123457}, {"color": "lightgray", "from": "dal", "to": "pozzolo", "width": 1.0123456790123457}, {"color": "lightgray", "from": "enrico", "to": "maria", "width": 1.0123456790123457}, {"color": "lightgray", "from": "hambre", "to": "madrid", "width": 1.0123456790123457}, {"color": "lightgray", "from": "influyente", "to": "siglo", "width": 1.0123456790123457}, {"color": "lightgray", "from": "maria", "to": "dal", "width": 1.0123456790123457}, {"color": "lightgray", "from": "marquesa", "to": "santa", "width": 1.0123456790123457}, {"color": "lightgray", "from": "mues", "to": "orts", "width": 1.0123456790123457}, {"color": "lightgray", "from": "neoclasicismo", "to": "artista", "width": 1.0123456790123457}, {"color": "lightgray", "from": "paula", "to": "mues", "width": 1.0123456790123457}, {"color": "lightgray", "from": "pintor", "to": "antonio", "width": 1.0123456790123457}, {"color": "lightgray", "from": "santa", "to": "cruz", "width": 1.0123456790123457}, {"color": "lightgray", "from": "universo", "to": "artista", "width": 1.0123456790123457}, {"color": "lightgray", "from": "arte", "to": "museo", "width": 1.0}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {"physics": {"enabled": true, "barnesHut": {"gravitationalConstant": -1500, "centralGravity": 0.3, "springLength": 95, "springConstant": 0.04}, "stabilization": {"iterations": 500}}, "nodes": {"shape": "dot", "size": 10, "font": {"size": 12, "face": "arial"}}, "edges": {"color": {"color": "lightgray", "highlight": "orange"}, "arrows": {"to": {"enabled": false}}, "smooth": {"type": "continuous"}}};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+                      network.on("stabilizationProgress", function(params) {
+                          document.getElementById('loadingBar').removeAttribute("style");
+                          var maxWidth = 496;
+                          var minWidth = 20;
+                          var widthFactor = params.iterations/params.total;
+                          var width = Math.max(minWidth,maxWidth * widthFactor);
+                          document.getElementById('bar').style.width = width + 'px';
+                          document.getElementById('text').innerHTML = Math.round(widthFactor*100) + '%';
+                      });
+                      network.once("stabilizationIterationsDone", function() {
+                          document.getElementById('text').innerHTML = '100%';
+                          document.getElementById('bar').style.width = '496px';
+                          document.getElementById('loadingBar').style.opacity = 0;
+                          // really clean the dom element
+                          setTimeout(function () {document.getElementById('loadingBar').style.display = 'none';}, 500);
+                      });
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>

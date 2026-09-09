@@ -1,0 +1,1446 @@
+---
+title: "Módulo 9: Evaluación"
+subtitle: "Text Mining en Python"
+author: "Antonio Ramón Vázquez Ramírez"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 4
+    number_sections: true
+    theme: cosmo
+    highlight: tango
+    code_folding: show
+---
+
+Carga de ntorno python y librerias
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(reticulate)
+
+# Nombre del entorno
+env_name <- "env_textmining"
+
+# Comprobar si el entorno ya existe en el sistema
+if (!reticulate::virtualenv_exists(env_name)) {
+  reticulate::virtualenv_create(env_name)
+  reticulate::virtualenv_install(env_name, c("pandas", "regex", "spacy", "nltk", "scikit-learn", "gensim", "umap-learn", "matplotlib", "fasttext-wheel", "sentence-transformers", "ollama", "chatlas", "pydantic"))
+  reticulate::use_virtualenv(env_name, required = TRUE)
+  reticulate::py_run_string("import spacy.cli; spacy.cli.download('es_core_news_sm')")
+} else {
+  # Si ya existe,  lo activa
+  reticulate::use_virtualenv(env_name, required = TRUE)
+}
+```
+
+# Carga de datos
+
+Desde la sesión de R, cargamos el archivo `evaluacion.RData`, que contiene tres datasets: `prado`, `reviews` y `documentos`. Exportamos dichos datasets como CSV.
+
+Desde la sesión de R
+
+```{r}
+setwd("C:/Users/Anthony/Proyectos/M9/evaluacion")
+
+```
+
+```{r}
+load("evaluacion.RData")
+
+readr::write_delim(prado, "prado.csv", delim = "\t")
+readr::write_delim(reviews, "reviews.csv", delim = "\t")
+readr::write_delim(documentos, "documentos.csv", delim = "\t")
+```
+
+Cargamos los datos.
+
+```{python}
+from pandas import read_csv
+
+prado = read_csv("prado.csv", sep = "\t" , dtype = {"status":str})
+reviews = read_csv("reviews.csv", sep = "\t")
+documentos = read_csv("documentos.csv", sep = "\t")
+```
+
+Comprobamos que los datos se han cargado
+
+```{python}
+print(f"Tuits de Prado: {len(prado)}")
+print(f"Reviews: {len(reviews)}")
+print(f"Documentos: {len(documentos)}")
+```
+
+## Descripción de los datasets
+
+-   **prado:** Cuenta de X (antiguo Twitter) del Museo del Prado: 1.038 tuits (desde 01-04-2025 al 31-07-2026).
+-   **reviews:** Contiene 13.000 críticas sobre el alojamiento en diversas ciudades de Andalucía.
+-   **documentos:** Contiene 120 oraciones.
+
+------------------------------------------------------------------------
+
+# Pregunta 1. Text Mining
+
+El dataset `prado` contiene 1.038 tuits, de la cuenta del Museo del Prado.
+
+## Descripción de las columnas
+
+-   **status:** Identificador del tuit
+-   **fecha:** Fecha de publicación del tuit. Desde el 01-04-2025 hasta el 31-07-2026.
+-   **texto:** El texto del tuit.
+
+Para realizar text mining al texto de los tuits, es importante depurar previamente el texto.
+
+Como, por ejemplo, eliminar del texto: usuarios de X, hashtags, URLs, …
+
+Para realizar la limpieza del texto, podemos utilizar el siguiente script:
+
+```{python limpiezadetexto}
+# === Limpieza de Texto ===
+
+import re, string
+
+prado['textmining'] = prado['texto']
+
+# Quitar "@usuario"
+prado['textmining'] = prado['textmining'].str.replace(
+    r'@\w+', '', regex=True
+)
+
+# Quitar "#hashtag"
+prado['textmining'] = prado['textmining'].str.replace(
+    r'#\w+', '', regex=True
+)
+
+# Quitar "URL"
+prado['textmining'] = prado['textmining'].str.replace(
+    r'http\S*', '', regex=True
+)
+
+# Quitar "e-Mail"
+prado['textmining'] = prado['textmining'].str.replace(
+    r'\w+@\w+\.\w+', '', regex=True
+)
+
+# Si fuera necesario, añadir espacio después de "punto","coma","punto y coma","dos puntos"
+prado['textmining'] = prado['textmining'].str.replace(
+    r'([.,;:])([a-zA-ZáéíóúñÁÉÍÓÚÑ])', r'\1 \2', regex=True
+)
+
+# Conservar letras, dígitos, espacios en blanco, saltos de línea y caracteres de puntuación
+prado['textmining'] = prado['textmining'].str.replace(
+    r'[^\wÀ-ÿ' + re.escape(string.punctuation) + r'\s]', '', regex=True
+)
+
+# Quitar símbolos
+prado['textmining'] = prado['textmining'].str.replace('ℹ', '')
+
+# Quitar espacios en blanco al inicio y final del texto
+prado['textmining'] = prado['textmining'].str.strip()
+```
+
+Realizar text mining a los tuits de la cuenta `prado`, desde 01-06-2025 hasta 31-07-2026.
+
+Empezamos realizando el filtrado temporal que requiere
+
+```{python filtrado}
+import pandas as pd
+prado["fecha"] = pd.to_datetime(prado["fecha"])
+prado_filtrado = prado[(prado["fecha"] >= "2025-06-01") & (prado["fecha"] <= "2026-07-31")].copy()
+
+print(f"Dataset listo. Tuits totales en el rango: {len(prado_filtrado)}")
+```
+
+Utilizar las librerías `spacy` y `nltk`, según proceda.
+
+Trabajar con la columna `"textmining"`. Operar con sustantivos, adjetivos y nombres propios.
+
+Se pide los siguientes apartados expuestos a continuación, cada uno realizado como una sección independiente
+
+### Términos más frecuentes.
+
+Extraemos únicamente los tokens y lemas correspondientes a Sustantivos, Adjetivos y Nombres Propios (`NOUN`, `ADJ`, `PROPN`) y eliminamos las stop words.\
+\
+Los tokens se utilizaran para el calculo de colocaciones, mientras que los lemas se utilizaran para las frecuencias y concurrencias
+
+```{python frecuencias_py}
+import spacy
+from collections import Counter
+import matplotlib.pyplot as plt
+
+# Cargar el modelo en español
+nlp = spacy.load("es_core_news_sm")
+
+tokens = []
+lemas = []
+
+# Procesar con pipe para optimizar recursos
+for doc in nlp.pipe(prado_filtrado["textmining"], disable=["ner"]):
+    for token in doc:
+        if token.pos_ in ["NOUN", "ADJ", "PROPN"] and not token.is_stop and not token.is_punct:
+            tokens.append(token.text)
+            lemas.append(token.lemma_.lower())
+
+# Obtener frecuencias
+freq_lemas = Counter(lemas)
+df_lemas = pd.DataFrame(freq_lemas.most_common(25), columns=["Lema", "Frecuencia"])
+
+print("Top 10 Lemas:")
+print(df_lemas.head(10))
+```
+
+Tambien podemos verlos en una representación gráfica
+
+```{python plot_frecuencias_py}
+plt.figure(figsize=(10, 6))
+plt.barh(df_lemas["Lema"], df_lemas["Frecuencia"], color="cadetblue")
+plt.gca().invert_yaxis()
+plt.xlabel("Frecuencia")
+plt.ylabel("Lemas")
+plt.title("Top 25 Lemas más frecuentes")
+plt.tight_layout()
+plt.show()
+```
+
+prado (718 apariciones) y museo (605 apariciones): Son, con diferencia, los términos más frecuentes. Lo cual es coherente con el dataset que estamos analizando. Por otro lado, el análisis lingüístico permite desvelar el foco del periodo analizado (2025-2026), destacando los nombres propios 'Isabel' y 'Veronese', dando a entender las principales líneas expositivas y de comunicación del museo en esas fechas.\
+\
+Como detalle, podemos notar el rango temporal (1528-1588), siendo este el periodo de vida del autor Paolo Veronese.
+
+```{python}
+from spacy.matcher import Matcher
+# 1. Configurar Matcher para detectar palabras en mayúsculas (Siglas)
+matcher_siglas = Matcher(nlp.vocab)
+pattern_siglas = [{"IS_UPPER": True}]
+matcher_siglas.add("patron_siglas", [pattern_siglas])
+
+siglas_encontradas = []
+for doc in nlp.pipe(prado_filtrado["textmining"], disable=["ner"]):
+    matches = matcher_siglas(doc)
+    for match_id, start, end in matches:
+        # Extraemos el texto de la coincidencia (en minúsculas o mayúsculas originales)
+        # Usamos .text para quedarnos con el string
+        siglas_encontradas.append(doc[start:end].text)
+
+# 2. Obtener frecuencias de las siglas encontradas
+freq_siglas = Counter(siglas_encontradas)
+
+# 3. Generar DataFrame con las 15 siglas más comunes
+df_siglas = pd.DataFrame(freq_siglas.most_common(15), columns=["Sigla", "Frecuencia"])
+
+# 4. Imprimir el resultado de forma elegante en consola
+print("Top 15 Siglas más encontradas en el corpus:")
+print(df_siglas.to_string(index=False))
+
+```
+
+Podemos ver que la mayoria de siglas representan numeros romanos. Esto es lo habitual cuando se mencionan siglos o nombres de reyes sucesivos. Contamos con una anomalia, y es el hecho de que la sigla mas encontrada corresponde a "A". Vamos a analizar a que puede deberse con algunos ejemplos
+
+```{python}
+ejemplos_A = []
+
+for doc in nlp.pipe(prado_filtrado["textmining"], disable=["ner"]):
+    for token in doc:
+        # Si el token es exactamente "A" en mayúscula
+        if token.text == "A" and token.is_upper:
+            # Extraer un trozo de texto alrededor (contexto de 3 palabras antes y después)
+            start = max(0, token.i - 3)
+            end = min(len(doc), token.i + 4)
+            contexto = " ".join([t.text for t in doc[start:end]])
+            ejemplos_A.append((doc.text, contexto))
+
+# 2. Imprimir los 10 primeros resultados
+print(f"Total de coincidencias de 'A' como sigla: {len(ejemplos_A)}\n")
+for idx, (tuit, ctx) in enumerate(ejemplos_A[:10]):
+    print(f"Ejemplo {idx+1}:")
+    print(f"  > Contexto: ... {ctx} ...")
+    print(f"  > Tuit original: {tuit[:120]}...")
+    print("-" * 60)
+```
+
+Podemos observar, que es común que una oración empiece con la preposición "A", por lo que esto explicaria como ha sido clasificado como el termino más frecuente entre las siglas
+
+### Buscar palabras clave:
+
+```         
+-   N-gramas: obtener bigramas, trigramas, …
+-   Colocaciones: obtener bigramas, trigramas, …
+```
+
+Ahora, analizamos los bigramas mas frecuentes.
+
+```{python}
+from spacy.matcher import Matcher
+
+def terminos_top(lista):
+    term_freq = Counter(lista)
+    df = pd.DataFrame.from_dict(term_freq, orient="index").reset_index()
+    df.columns = ["termino", "freq"]
+    return df.sort_values(by="freq", ascending=False).reset_index(drop=True)
+
+# 1. Pasada "sucia" (sin stopwords) tal como hace el profesor
+matcher_sucio = Matcher(nlp.vocab)
+
+# Patrón base sin restricciones de lema
+pattern_sucio = [
+    {"POS": {"IN": ["ADJ", "NOUN", "PROPN"]}},
+    {"POS": {"IN": ["ADJ", "NOUN", "PROPN"]}}
+]
+matcher_sucio.add("patron_sucio", [pattern_sucio])
+
+bigramas_sucios = []
+for doc in nlp.pipe(prado_filtrado["textmining"], disable=["ner"]):
+    matches = matcher_sucio(doc)
+    if len(matches) > 0:
+        for match_id, start, end in matches:
+            # Extraemos el lema en minúsculas, igual que en los apuntes
+            bigramas_sucios.append(doc[start:end].lemma_.lower()) 
+            
+# Reutilizamos tu función terminos_top para ver la tabla
+df_sucios = terminos_top(bigramas_sucios)
+
+print("Top 30 Bigramas (CON RUIDO) para detectar stopwords:")
+print(df_sucios.head(30).to_string(index=False))
+```
+
+Basado en los resultados, vemos ciertos bigramas que no son relevantes, por lo que ahora realizamos un filtrado de estas palabras
+
+```{python}
+import pandas as pd
+from spacy.matcher import Matcher
+
+
+
+# 1. Tu lista empírica de stopwords basada en la observación de tuits
+stopwords = ["último", "día", "vista","visita", "panorámica", "accede", "gratis", "impartido", "dedicado"]
+
+matcher_limpio = Matcher(nlp.vocab)
+
+# 2. El patrón matemático oficial del curso, ahora con TUS stopwords
+pattern_limpio = [
+    {"POS": {"IN": ["ADJ", "NOUN", "PROPN"]}, "LEMMA": {"NOT_IN": stopwords}},
+    {"POS": {"IN": ["ADJ", "NOUN", "PROPN"]}, "LEMMA": {"NOT_IN": stopwords}}
+]
+matcher_limpio.add("patron_limpio", [pattern_limpio])
+
+bigramas_limpios = []
+for doc in nlp.pipe(prado_filtrado["textmining"], disable=["ner"]):
+    matches = matcher_limpio(doc)
+    if len(matches) > 0:
+        for match_id, start, end in matches:
+            # Extraemos tokens en minúsculas
+            bigramas_limpios.append(doc[start:end].text.lower()) 
+            
+# 3. Visualizamos el resultado final usando tu función
+df_bigramas_final = terminos_top(bigramas_limpios)
+
+print("Top 15 Bigramas (Limpios):")
+print(df_bigramas_final.head(15).to_string(index=False))
+```
+
+ahora vemos los trigramas
+
+```{python}
+# matcher.remove("patron_bi")
+matcher=Matcher(nlp.vocab)
+pattern_tri = [
+    {"POS": {"IN": ["ADJ", "NOUN", "PROPN"]}, "LEMMA": {"NOT_IN": stopwords}},
+    {"POS": {"IN": ["ADJ", "NOUN", "PROPN"]}, "LEMMA": {"NOT_IN": stopwords}},
+    {"POS": {"IN": ["ADJ", "NOUN", "PROPN"]}, "LEMMA": {"NOT_IN": stopwords}}
+]
+matcher.add("patron_tri", [pattern_tri])
+
+trigramas_extraidos = []
+for doc in nlp.pipe(prado_filtrado["textmining"]):
+    matches = matcher(doc)
+    for match_id, start, end in matches:
+        trigramas_extraidos.append(doc[start:end].text)
+
+df_trigramas = terminos_top(trigramas_extraidos)
+print("\nTop 10 Trigramas más frecuentes (Tokens):")
+print(df_trigramas.head(10).to_string(index=False))
+
+```
+
+Podemos ver algunos trigramas como "Università degli Studi" y "degli Studi di" que son ambos partes de la misma institución. Más adelante se realizará una limpieza donde se filtraran los n-gramas que forman parte de otros.\
+\
+Ahora vamos a ver los diferentes nombres compuestos
+
+```{python}
+# 1. Limpiar el matcher anterior para evitar interferencias
+matcher.remove("patron_tri")
+
+# 2. Definir los patrones oficiales de nombres propios consecutivos (de 2 a 5 tokens)
+pattern_2 = [{"POS": "PROPN"}, {"POS": "PROPN"}]
+pattern_3 = [{"POS": "PROPN"}, {"POS": "PROPN"}, {"POS": "PROPN"}]
+pattern_4 = [{"POS": "PROPN"}, {"POS": "PROPN"}, {"POS": "PROPN"}, {"POS": "PROPN"}]
+pattern_5 = [{"POS": "PROPN"}, {"POS": "PROPN"}, {"POS": "PROPN"}, {"POS": "PROPN"}, {"POS": "PROPN"}]
+
+matcher.add("2gramas", [pattern_2])
+matcher.add("3gramas", [pattern_3])
+matcher.add("4gramas", [pattern_4])
+matcher.add("5gramas", [pattern_5])
+
+nombres_compuestos = []
+
+# 3. Procesar sobre la columna "texto" original para máxima precisión del etiquetador POS
+for doc in nlp.pipe(prado_filtrado["textmining"], disable=["ner"]):
+    matches = matcher(doc)
+    if len(matches) > 0:
+        for match_id, start, end in matches:
+            # Almacenamos el texto original respetando sus mayúsculas
+            nombres_compuestos.append(doc[start:end].text)
+
+# 4. Calcular frecuencias utilizando tu función terminos_top
+df_nombres_compuestos = terminos_top(nombres_compuestos)
+
+# 5. Imprimir el Top 45 de nombres propios compuestos
+print("Top 45 Nombres Propios Compuestos en el corpus (Sin filtrar redundancias):")
+print(df_nombres_compuestos.head(25).to_string(index=False))
+```
+
+podemos remplazar los terminos que forman parte de otros, como se menciono anteriormente
+
+```{python}
+# 1. Lista para guardar los nombres verdaderamente únicos
+unicos = []
+
+# 2. Iteramos sobre los 200 nombres más frecuentes
+for text in df_nombres_compuestos["termino"].head(200):
+    # Buscamos en cuántos registros está contenido este texto
+    indices = [i for i, s in enumerate(df_nombres_compuestos["termino"]) if text in s]
+    
+    # Si solo aparece 1 vez (es decir, solo hace match consigo mismo)
+    if len(indices) == 1:
+        unicos.append(text)
+
+# 3. Filtramos el DataFrame para quedarnos solo con los Nombres Propios consolidados
+df_nombres_unicos = df_nombres_compuestos[df_nombres_compuestos["termino"].isin(unicos)].reset_index(drop=True)
+
+# 4. Imprimimos el resultado limpio
+print("Top 25 Nombres Propios Compuestos (Limpios de redundancias):")
+print(df_nombres_unicos.head(25).to_string(index=False))
+```
+
+Ahora si podemos observar como los ngramas que forman parte de otros han sido limpiados, y se detecta la universidad como Studi di Verona
+
+Ahora vamos a analizar las colocaciones:
+
+```{python}
+from nltk.collocations import BigramCollocationFinder, BigramAssocMeasures
+from nltk.collocations import TrigramCollocationFinder, TrigramAssocMeasures
+import pandas as pd
+
+print("\n--- Búsqueda de Palabras Clave: Colocaciones (PMI) ---")
+# 1. Extraemos los tokens secuenciales limpios (como hace el manual)
+tokens_coloc = []
+for doc in nlp.pipe(prado_filtrado["textmining"], disable=["ner"]):
+    for token in doc:
+        # Filtramos por categoría gramatical y eliminamos tus stopwords usando el lema
+        if token.pos_ in ["NOUN", "ADJ", "PROPN"]:
+            if token.lemma_.lower() not in stopwords:
+                tokens_coloc.append(token.text.lower())
+                
+finder_bi = BigramCollocationFinder.from_words(tokens_coloc)
+# Aplicamos un filtro de frecuencia (mínimo 3) para evitar que el PMI 
+# nos dé valores altísimos por palabras raras que solo salen juntas 1 vez.
+finder_bi.apply_freq_filter(3) 
+
+bigram_measures = BigramAssocMeasures()
+pmi_bi = []
+
+for i in finder_bi.score_ngrams(bigram_measures.pmi):
+    pmi_bi.append({"Palabra_1": i[0][0], "Palabra_2": i[0][1], "PMI": i[1]})
+
+df_coloc_bi = pd.DataFrame(pmi_bi)
+print("Top 15 Colocaciones de Bigramas por PMI:")
+print(df_coloc_bi.head(15).to_string(index=False))
+
+```
+
+Ahora las colocaciones de trigramas\
+
+```{python}
+finder_tri = TrigramCollocationFinder.from_words(tokens_coloc)
+finder_tri.apply_freq_filter(3) 
+
+trigram_measures = TrigramAssocMeasures()
+pmi_tri = []
+
+for i in finder_tri.score_ngrams(trigram_measures.pmi):
+    pmi_tri.append({"Palabra_1": i[0][0], "Palabra_2": i[0][1], "Palabra_3": i[0][2], "PMI": i[1]})
+
+df_coloc_tri = pd.DataFrame(pmi_tri)
+print("\nTop 15 Colocaciones de Trigramas por PMI:")
+print(df_coloc_tri.head(15).to_string(index=False))
+```
+
+Tambien podemos ver los terminos mas significativos mediante el likehood
+
+```{python}
+llr_tri = []
+for i in finder_tri.score_ngrams(trigram_measures.likelihood_ratio):
+    llr_tri.append({"Palabra_1": i[0][0], "Palabra_2": i[0][1], "Palabra_3": i[0][2], "LLR": i[1]})
+df_coloc_tri_llr = pd.DataFrame(llr_tri)
+
+
+
+print("\nTop 15 por Likelihood Ratio (Términos Estables):")
+print(df_coloc_tri_llr.head(15).to_string(index=False))
+```
+
+Vemos que los terminos relativos al museo del prado son los dominantes. con un peso notablemente alto
+
+### Visualizar las coocurrencias.
+
+Dibujamos las relaciones y fuerzas de enlace entre los términos que aparecen juntos con mayor frecuencia dentro del mismo tuit.
+
+```{python}
+from nltk.collocations import BigramCollocationFinder, BigramAssocMeasures
+import pandas as pd
+lemas_cooc = []
+for doc in nlp.pipe(prado_filtrado["textmining"], disable=["ner"]):
+    for token in doc:
+        if token.pos_ in ["NOUN", "ADJ", "PROPN"]:
+            if token.lemma_.lower() not in stopwords:
+                lemas_cooc.append(token.lemma_.lower())
+
+finder_lemas = BigramCollocationFinder.from_words(lemas_cooc)
+
+# 3. Aplicamos un filtro de frecuencia (frecuencia mínima = 3 para redes sociales)
+finder_lemas.apply_freq_filter(3)
+
+# 4. Usamos la medida de frecuencia bruta (raw_freq) para evaluar coocurrencias
+bigram_measures = BigramAssocMeasures()
+
+left = []
+right = []
+freq = []
+
+for i in finder_lemas.score_ngrams(bigram_measures.raw_freq):
+    left.append(i[0][0])  # Palabra 1 (String)
+    right.append(i[0][1]) # Palabra 2 (String)
+    freq.append(i[1])     # Frecuencia bruta (Float)
+
+
+# 5. Generamos el DataFrame de coocurrencias
+df_cooc = pd.DataFrame({
+    "left": left,
+    "right": right,
+    "freq": freq
+})
+
+# 6. Limpieza: Evitamos que una palabra coocurra consigo misma (lazos circulares)
+df_cooc = df_cooc[df_cooc["left"] != df_cooc["right"]]
+
+# 7. Multiplicamos la frecuencia por 10.000 (el truco matemático del profesor)
+# Esto convierte la probabilidad decimal en una "frecuencia esperada por cada 10k palabras",
+# ideal para usarse después como grosor físico de las líneas del grafo.
+df_cooc["freq"] = df_cooc["freq"] * 10000
+
+print("Top 15 Coocurrencias de Lemas más frecuentes:")
+print(df_cooc.head(15).to_string(index=False))
+```
+
+```{python}
+import networkx as nx
+import matplotlib.pyplot as plt
+
+# Configuramos un lienzo amplio para evitar apelotonamientos
+plt.figure(figsize=(11, 11))
+
+# Tomamos las 40 coocurrencias más fuertes para un gráfico limpio y legible
+df_nx = df_cooc.head(40)
+
+# Creamos el grafo
+G = nx.from_pandas_edgelist(
+    df_nx, 
+    source="left", 
+    target="right", 
+    edge_attr="freq", 
+    create_using=nx.Graph()
+)
+
+# Posicionamiento armónico de nodos (aumentamos 'k' para separar las palabras)
+pos = nx.spring_layout(G, k=0.45, seed=42)
+
+# Calculamos grosores de línea proporcionales a la fuerza de coocurrencia
+edges = G.edges(data=True)
+weights = [d["freq"] for (_, _, d) in edges]
+max_w = max(weights) if weights else 1
+# Escalamos los grosores entre 1 y 6 para que se vean bien las líneas
+norm_weights = [1 + 5 * (w / max_w) for w in weights]
+
+# A) Pintamos las uniones (aristas) de forma muy clara en gris azulado translúcido
+nx.draw_networkx_edges(
+    G, pos, 
+    width=norm_weights, 
+    alpha=0.4, 
+    edge_color="steelblue"
+)
+
+# B) Pintamos los nodos como círculos discretos de color azul pastel
+nx.draw_networkx_nodes(
+    G, pos, 
+    node_color="#add8e6", 
+    node_size=180, 
+    edgecolors="gray", 
+    linewidths=0.5
+)
+
+# C) Pintamos las etiquetas de texto con un ligero desplazamiento para que no tapen el nodo
+# Añadimos una tipografía elegante en verde oscuro
+nx.draw_networkx_labels(
+    G, pos, 
+    font_color="#1b4332", 
+    font_size=8,
+    font_weight="bold"
+)
+
+plt.title("Red Semántica de Coocurrencias del Museo del Prado\n(Top 40 relaciones más frecuentes)", 
+          fontsize=13, fontweight="bold")
+plt.axis("off")
+plt.tight_layout()
+plt.show()
+```
+
+Podemos observar un nucleo tematico entrono a la fuerte conexion de *museo-prado* de donde podemos ver que salen conceptos relacionados con la institución, como *exposiciones , taquilla, virtual.\
+\
+*Podemos ver otros pequeños subsistemas temáticos en torno a *paolo-veronese, juan-muñoz, españa-mexico* ligado a diferentes regiones geofraficas, y un subsistema ligado a figuras femeninas en torno a *isabel-reina*\
+\
+Tambien podemos crear un cluster interactivo en HTML para poder observar con mas detalle la red
+
+```{python}
+from pyvis.network import Network
+from sklearn.preprocessing import MinMaxScaler
+
+# Seleccionamos las 100 relaciones más fuertes para la red interactiva
+df_pyvis = df_cooc.head(100).copy()
+
+# Escalamos el grosor de las líneas interactivas
+scaler = MinMaxScaler(feature_range=(1, 7))
+df_pyvis["width"] = scaler.fit_transform(df_pyvis[["freq"]])
+
+# Inicializamos la red de PyVis
+net = Network(height="600px", width="100%", bgcolor="#ffffff", font_color="#333333")
+
+# Llenamos la red interactiva evitando duplicar nodos
+nodos_agregados = set()
+for index, row in df_pyvis.iterrows():
+    u, v, w = row["left"], row["right"], row["width"]
+    
+    if u not in nodos_agregados:
+        net.add_node(u, label=u, title=u, color="#8ecae6")
+        nodos_agregados.add(u)
+    if v not in nodos_agregados:
+        net.add_node(v, label=v, title=v, color="#8ecae6")
+        nodos_agregados.add(v)
+        
+    net.add_edge(u, v, width=w, color="lightgray")
+
+# Configuramos opciones de física interactiva agradables para el usuario
+net.set_options("""
+{
+  "physics": {
+    "enabled": true,
+    "barnesHut": {
+      "gravitationalConstant": -1500,
+      "centralGravity": 0.3,
+      "springLength": 95,
+      "springConstant": 0.04
+    },
+    "stabilization": {"iterations": 500}
+  },
+  "nodes": {
+    "shape": "dot",
+    "size": 10,
+    "font": {"size": 12, "face": "arial"}
+  },
+  "edges": {
+    "color": {"color": "lightgray", "highlight": "orange"},
+    "arrows": {"to": {"enabled": false}},
+    "smooth": {"type": "continuous"}
+  }
+}
+""")
+
+# Guardamos el archivo HTML interactivo
+net.show("red_interactiva_prado.html", notebook=False)
+print("\n¡Grafo interactivo generado con éxito en 'red_interactiva_prado.html'!")
+```
+
+El análisis visual de la Red de Coocurrencias revela que el núcleo de la red está dominado por los conceptos de la entidad ('museo', 'prado', 'visita guiada'). Sin embargo, en torno a este nucleo, aparecen tres agrupaciones temáticas: en primer lugar, el cluster cerrado que rodea a 'Paolo Veronese (1528-1588)'; en segundo lugar, un cluster que vincula a 'Isabel' (Farnesio) con la perspectiva femenina; y finalmente, un nodo aislado y sumamente específico dedicado a la obra escultórica de 'Juan Muñoz'. Este mapa refleja que las redes sociales del museo combinan de manera equilibrada la agenda diaria con grandes hitos de divulgación histórica y contemporánea.
+
+### Reconocimiento de entidades nombradas (NER).
+
+Utilizamos el reconocedor de entidades de spaCy para extraer nombres de personas, ubicaciones y organizaciones de los tuits.
+
+```{python}
+import pandas as pd
+from collections import Counter
+
+# 1. Inicializamos listas para guardar las entidades según su categoría
+personas = []
+lugares = []
+organizaciones = []
+miscelanea = []
+
+# 2. Procesamos el corpus con nlp.pipe (¡MANTENIENDO EL NER ACTIVO!)
+# Usamos la columna "texto" original para que spaCy mantenga las mayúsculas de pista
+for doc in nlp.pipe(prado_filtrado["textmining"]):
+    for ent in doc.ents:
+        texto_entidad = ent.text.strip()
+        
+        # Filtramos entidades de longitud muy corta o vacías por seguridad
+        if len(texto_entidad) < 2:
+            continue
+            
+        # Clasificamos según la etiqueta que le asigna spaCy (.label_)
+        if ent.label_ == "PER":
+            personas.append(texto_entidad)
+        elif ent.label_ == "LOC":
+            # El profesor unifica el Museo del Prado bajo la misma etiqueta LOC
+            if "Prado" in texto_entidad or "Museo del Prado" in texto_entidad:
+                lugares.append("Museo del Prado")
+            else:
+                lugares.append(texto_entidad)
+        elif ent.label_ == "ORG":
+            organizaciones.append(texto_entidad)
+        elif ent.label_ == "MISC":
+            miscelanea.append(texto_entidad)
+
+# 3. Creamos tablas de frecuencia usando la función auxiliar del profesor
+df_personas = terminos_top(personas)
+df_lugares = terminos_top(lugares)
+df_organizaciones = terminos_top(organizaciones)
+df_miscelanea = terminos_top(miscelanea)
+
+# 4. Mostramos los resultados de las categorías principales para el informe
+print("=== TOP 15 PERSONAS DETECTADAS (PER) ===")
+print(df_personas.head(15).to_string(index=False))
+
+print("\n=== TOP 15 LUGARES DETECTADOS (LOC) ===")
+print(df_lugares.head(15).to_string(index=False))
+
+print("\n=== TOP 15 ORGANIZACIONES DETECTADAS (ORG) ===")
+print(df_organizaciones.head(15).to_string(index=False))
+```
+
+De nuevo vemos que el Museo del Prado es la entidad con mayor frecuencia. Sin embargo, el modelo trata "Museo del Prado", "El Prado" y "Prado" como entidades distintas, lo que muestra las limitaciones del modelo de lenguaje natural.\
+\
+España sale clasificada como persona, esto puede deberse a la falta de la correcta sintaxis en los tuits donde se menciona a España, denominandola de la misma manera que se haría con una persona, con mayusculas. Lo mismo puede ocurrir para "Visitas"\
+Celebrada aparece como localización .\
+\
+Estos hechos evidencian las limitaciones de los modleos pequeños para el correcto analisis de tuits, donde no se siguen las reglas del lenguaje formal
+
+Gráfico de Entidades Nombradas por Categoría
+
+```{python}
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+
+# ==========================================
+# 1. ADAPTACIÓN DE TUS VARIABLES (EL PUENTE)
+# ==========================================
+# Añadimos la etiqueta de tipo a las tablas que generaste antes
+df_personas['Tipo'] = 'PER'
+df_lugares['Tipo'] = 'LOC'
+df_organizaciones['Tipo'] = 'ORG'
+
+# Unimos (concatenamos) las tres tablas en una sola
+df_todas = pd.concat([df_personas, df_lugares, df_organizaciones])
+
+# Ordenamos de mayor a menor frecuencia y sacamos el Top 15 global
+top_entidades = df_todas.sort_values(by="freq", ascending=False).head(15).copy()
+
+# Renombramos las columnas para que encajen exactamente con tu código de la gráfica
+top_entidades.rename(columns={"termino": "Entidad", "freq": "Frecuencia"}, inplace=True)
+
+# ==========================================
+# 2. TU CÓDIGO DE VISUALIZACIÓN
+# ==========================================
+# Crear lienzo explícito
+fig, ax = plt.subplots(figsize=(10, 6))
+
+# Configurar mapa de colores según el tipo de entidad
+colores_dict = {"PER": "salmon", "LOC": "skyblue", "ORG": "lightgreen"}
+colores = [colores_dict.get(tipo, "gray") for tipo in top_entidades["Tipo"]]
+
+# Dibujar barras horizontales
+ax.barh(top_entidades["Entidad"], top_entidades["Frecuencia"], color=colores)
+ax.invert_yaxis()
+ax.set_xlabel("Frecuencia")
+ax.set_ylabel("Entidades")
+
+# Título limpio (sin texto de leyenda)
+ax.set_title("Top 15 Entidades Nombradas más frecuentes", fontsize=14, weight="bold")
+
+# Crear los elementos visuales de la leyenda de forma manual
+parches_leyenda = [
+    mpatches.Patch(color="salmon", label="Persona (PER)"),
+    mpatches.Patch(color="skyblue", label="Ubicación (LOC)"),
+    mpatches.Patch(color="lightgreen", label="Organización (ORG)")
+]
+
+# Añadir la leyenda al gráfico
+ax.legend(handles=parches_leyenda, loc="lower right", title="Tipos de Entidad", frameon=True, facecolor="white", edgecolor="lightgray")
+
+plt.tight_layout()
+plt.show()
+```
+
+### Análisis de Casos Específicos
+
+Podemos clasificar los tuits conforme a una temática determinada. Para extraer temas, podemos basarnos en la información que se desprende del text mining. Se pide:
+
+-   Examinando las palabras clave (bigramas, trigramas, etc) y las coocurrencias obtenidas, indica algunos nombres de pintores y exposiciones.
+
+    Si te resulta más cómodo, señala las relaciones oportunas (término1 − término2 − término3 − término4).
+
+Respecto a los pintores, pudimos identificar varios de ellos en el text mining anterior, como *Juan Muñoz, Pablo Veronese*, aunque la identificación de las exposicionesno fue tan clara. Para facilitiarlo, podemos buscar los n-gramas relacionados con exposición o exposiciones
+
+```{python}
+df_bi_expo = df_bigramas_final[df_bigramas_final["termino"].str.contains("exposici", case=False, na=False)]
+
+print("--- Bigramas que contienen 'exposición' o 'exposiciones': ---")
+print(df_bi_expo.head(10).to_string(index=False))
+
+
+# 2. Filtrar en tus Trigramas Limpios
+df_tri_expo = df_trigramas[df_trigramas["termino"].str.contains("exposici", case=False, na=False)]
+
+print("\n--- Trigramas que contienen 'exposición' o 'exposiciones': ---")
+print(df_tri_expo.head(10).to_string(index=False))
+```
+
+-   Selecciona aquellos tuits donde figure la cadena de texto `"Veronese"`. Después, muestra el texto de los cinco primeros tuits (ordenados por fecha, del tuit más antiguo al más reciente). Para finalizar, visualiza las coocurrencias.
+
+-   Ídem a la pregunta anterior, pero empleando la cadena de texto `"femenino"`.
+
+Definimos una función para analizar ambas palabras clave y mostramos los tuits en orden cronológico
+
+```{python}
+import pandas as pd
+import networkx as nx
+import itertools
+from collections import Counter
+import matplotlib.pyplot as plt
+
+# Tu lista de stopwords validada empíricamente
+stopwords = ["último", "día", "vista", "visita", "panorámica", "accede", "gratis", "impartido", "dedicado"]
+
+def analizar_caso_especifico(palabra_clave, df, nlp_model):
+    print(f"\n" + "="*50)
+    print(f"ANÁLISIS ESPECÍFICO: '{palabra_clave.upper()}'")
+    print("="*50)
+    
+    # 1. Filtramos el DataFrame y ordenamos por fecha (del más antiguo al más reciente)
+    df_filtrado = df[df["textmining"].str.contains(palabra_clave, case=False, na=False)].copy()
+    df_filtrado = df_filtrado.sort_values(by="fecha", ascending=True)
+    
+    print(f"Total de tuits encontrados: {len(df_filtrado)}\n")
+    print("--- TOP 5 TUITS MÁS ANTIGUOS ---")
+    
+    # 2. Imprimimos los 5 primeros tuits
+    for idx, row in df_filtrado.head(5).reset_index().iterrows():
+        # Formateamos la fecha para que quede elegante
+        fecha_str = row['fecha'].strftime('%Y-%m-%d')
+        print(f"{idx+1}. [{fecha_str}] {row['texto']}")
+        print("-" * 30)
+        
+    # 3. Calculamos coocurrencias locales
+    cooc_local = Counter()
+    for doc in nlp_model.pipe(df_filtrado["textmining"], disable=["ner"]):
+        lemas_unicos = list(set([
+            token.lemma_.lower() for token in doc 
+            if token.pos_ in ["NOUN", "ADJ", "PROPN"] 
+            and token.lemma_.lower() not in stopwords
+        ]))
+        
+        for p1, p2 in itertools.combinations(sorted(lemas_unicos), 2):
+            cooc_local[(p1, p2)] += 1
+            
+    # Si no hay suficientes datos para un grafo, salimos
+    if not cooc_local:
+        print("No hay suficientes relaciones para dibujar un grafo.")
+        return
+        
+    # 4. Preparamos los datos para NetworkX (Top 15 relaciones locales)
+    df_cooc = pd.DataFrame([{"nodo1": k[0], "nodo2": k[1], "peso": v} for k, v in cooc_local.items()])
+    top_cooc = df_cooc.sort_values(by="peso", ascending=False).head(15)
+    
+    # 5. Dibujamos el mini-grafo
+    G = nx.from_pandas_edgelist(top_cooc, source="nodo1", target="nodo2", edge_attr="peso", create_using=nx.Graph())
+    
+    plt.figure(figsize=(8, 6))
+    # Ajustamos 'k' para que los nodos no colapsen
+    pos = nx.spring_layout(G, k=0.8, seed=42)
+    
+    pesos = [G[u][v]['peso'] for u,v in G.edges()]
+    max_peso = max(pesos) if pesos else 1
+    grosores = [(w / max_peso) * 4 for w in pesos]
+    
+    nx.draw_networkx_edges(G, pos, width=grosores, edge_color="gray", alpha=0.6)
+    nx.draw_networkx_nodes(G, pos, node_color="#ff9999", node_size=800, edgecolors="white")
+    nx.draw_networkx_labels(G, pos, font_size=10, font_weight="bold", font_color="black")
+    
+    plt.title(f"Red Local de Coocurrencias: '{palabra_clave}'", fontsize=14, fontweight="bold")
+    plt.axis("off")
+    plt.tight_layout()
+    plt.show()
+
+# Ejecutamos la función para los dos casos que pide el examen
+analizar_caso_especifico("Veronese", prado_filtrado, nlp)
+analizar_caso_especifico("femenino", prado_filtrado, nlp)
+```
+
+### Word embeddings
+
+```         
+-   Modelo Word2Vec. El texto debe estar compuesto únicamente por los lemas deseados.
+-   Mostrar las similitudes de los términos: `"farnesio"`, `"caravaggio"`, `"università"`, `"falomir"`.
+-   Visualizar word embeddings mediante el método UMAP.
+```
+
+Empezamos preparando una lista de palabras limpia,
+
+```{python}
+import pandas as pd
+from gensim.models import Word2Vec
+from umap import UMAP
+import matplotlib.pyplot as plt
+
+# 1. PREPARACIÓN DE DATOS (LEMAS)
+docs_lemas = []
+# Usamos prado_filtrado y la lista de stopwords que validaste antes
+for doc in nlp.pipe(prado_filtrado["textmining"], disable=["ner"]):
+    lemas = []
+    for token in doc:
+        if token.pos_ in ["NOUN", "ADJ", "PROPN"]:
+            if token.lemma_.lower() not in stopwords:
+                lemas.append(token.lemma_.lower())
+    # Solo añadimos documentos que tengan al menos 2 palabras (para tener contexto)
+    if len(lemas) > 1:
+        docs_lemas.append(lemas)
+```
+
+Ahora realizamos el entrenamiento de la red
+
+```{python}
+modelo_w2v = Word2Vec(
+    docs_lemas, 
+    sg=1,              # Skip-gram: Ideal para corpus pequeños y relaciones raras
+    vector_size=20,    # 20 dimensiones son suficientes para 800 tuits
+    epochs=100,        # Subimos epochs para que converja mejor al ser pocos datos
+    min_count=7,       # Aseguramos que entren las palabras del examen
+    window=5, 
+    seed=42,
+    workers=1          # workers=1 y seed fija aseguran reproducibilidad exacta
+)
+
+```
+
+```{python}
+terminos_examen = ["farnesio", "caravaggio", "università", "falomir"]
+
+print("\n3. SIMILITUDES VECTORIALES (Top 5 vecinos):")
+print("-" * 50)
+for term in terminos_examen:
+    try:
+        similares = modelo_w2v.wv.most_similar(term, topn=5)
+        print(f"▶ Vecinos de '{term.upper()}':")
+        for palabra, similitud in similares:
+            print(f"   - {palabra}: {similitud:.4f}")
+    except KeyError:
+        print(f"▶ [ALERTA] '{term.upper()}' no alcanzó el umbral mínimo de apariciones en el corpus.")
+    print()
+```
+
+```{python}
+vectores = modelo_w2v.wv.vectors
+vocabulario = modelo_w2v.wv.index_to_key
+
+# Calibración física de UMAP para separar bien las constelaciones
+reductor_umap = UMAP(n_neighbors=5, min_dist=0.5, metric='cosine', random_state=42)
+coordenadas_2d = reductor_umap.fit_transform(vectores)
+
+
+```
+
+```{python}
+limite_visual = min(60, len(vocabulario))
+palabras_a_pintar = vocabulario[:limite_visual]
+
+for term in terminos_examen:
+    if term in vocabulario and term not in palabras_a_pintar:
+        palabras_a_pintar.append(term)
+
+indices = [vocabulario.index(palabra) for palabra in palabras_a_pintar]
+x_coords = coordenadas_2d[indices, 0]
+y_coords = coordenadas_2d[indices, 1]
+
+# 1. Ajuste del lienzo (más ancho y con márgenes limpios como el profesor)
+plt.figure(figsize=(14, 10))
+
+# 2. Iteramos palabra por palabra para controlar exactamente cómo se dibuja cada una
+for i, palabra in enumerate(palabras_a_pintar):
+    if palabra in terminos_examen:
+        # A) ESTÉTICA PALABRAS CLAVE (Examen)
+        # Punto rojo más sutil
+        plt.scatter(x_coords[i], y_coords[i], color='red', s=20, zorder=2, alpha=0.4)
+        # Texto desplazado ligerísimamente hacia arriba, en negrita
+        plt.text(x_coords[i], y_coords[i] + 0.08, palabra, 
+                 color='darkred', fontsize=6, fontweight='bold', 
+                 ha='center', va='bottom', zorder=6)
+    else:
+        # B) ESTÉTICA CONTEXTO (Ruido de fondo estilo profesor)
+        # Círculo gris muy tenue, casi marca de agua
+        plt.scatter(x_coords[i], y_coords[i], color="lightgray", s=20, edgecolor="darkgray", alpha=0.4, zorder=2)
+        # Texto gris oscuro, fuente normal y más pequeña
+        plt.text(x_coords[i], y_coords[i] + 0.05, palabra, 
+                 color='#4a4a4a', fontsize=6, fontweight='normal', 
+                 alpha=0.8, ha='center', va='bottom', zorder=3)
+
+# 3. Título y limpieza del gráfico (igual que las coocurrencias del manual)
+plt.title("Proyección UMAP de Word Embeddings", 
+          fontsize=12, fontweight="bold", loc="center")
+          
+# Ajuste fino de los márgenes para que respire
+plt.subplots_adjust(left=0.05, right=0.95, top=0.90, bottom=0.05)
+plt.axis("off") # Ocultamos los ejes X e Y, que en UMAP no tienen significado físico real
+plt.show()
+```
+
+El modelo sitúa a *'farnesio'* en un clúster muy cohesionado junto a *'isabel'*, *'femenino'*, *'reina'* e *'itinerario'*. Esto demuestra matemáticamente que la red neuronal ha "comprendido" el concepto de la exposición "El Prado en Femenino", ligando el patronazgo de la reina con las visitas divulgativas.
+
+**Falomir y Università (Investigación/Veronese):** Ambos términos gravitan en la zona superior de forma aislada, pero próximos a las fechas *'1528-1588'* (Veronese). Esto corrobora el vínculo institucional del director del museo y la universidad italiana en el comisariado de dicha exposición.
+
+**Caravaggio (Aislamiento contextual):** La palabra *'caravaggio'* aparece en la periferia, sin un clúster fuerte a su alrededor. Las similitudes del coseno revelan que sus vecinos son *'fresco'* o *'altura'*, lo que sugiere menciones descriptivas puntuales y no una campaña temática estructurada.
+
+------------------------------------------------------------------------
+
+# Pregunta 2. Clasificación de Texto: Análisis de sentimiento
+
+El dataset `reviews` contiene 13.000 críticas sobre el alojamiento en diversas ciudades de Andalucía.
+
+## Descripción de las columnas
+
+-   **titulo:** Breve descripción de la crítica.
+-   **texto:** El texto de la crítica.
+-   **puntuacion:** La calificación del usuario, en una escala de 5 estrellas. Variable categórica, con cinco valores posibles: 1 (muy mal), 2 (mal), 3 (regular), 4 (bien), 5 (muy bien).
+
+## Se pide
+
+### Preparación del texto y partición
+
+-   Divida `reviews` en dos datasets: dataset de entrenamiento (con el 80% de las filas) y dataset de prueba (con el 20% de las filas restantes). No es necesario que los datasets estén balanceados.
+
+Dado que vamos a realizar analisis de sentimientos, no eliminaremos stopwords para evitar cambiar los significados de las oraciones
+
+Unificamos la columna `titulo` y `texto` en una nueva columna `textmining`. Adicionalmente, sustituimos los saltos de línea explícitos por espacios en blanco, ya que la herramienta `fastText` exige que cada documento a procesar o evaluar se encuentre en una única línea de texto.
+
+```{python prep_reviews}
+import pandas as pd
+import numpy as np
+import tempfile, os
+import fasttext
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.naive_bayes import MultinomialNB
+
+# Unificar título y texto de la crítica rellenando posibles valores nulos
+reviews["titulo"] = reviews["titulo"].fillna("")
+reviews["texto"] = reviews["texto"].fillna("")
+reviews["textmining"] = reviews["titulo"] + ". " + reviews["texto"]
+
+# Limpieza: reemplazar saltos de línea por espacios (requerimiento de fastText)
+reviews["textmining"] = reviews["textmining"].str.replace(r"[\r\n]+", " ", regex=True)
+reviews["textmining"] = reviews["textmining"].str.lower()
+reviews["textmining"] = reviews["textmining"].str.replace(r"[^\wáéíóúüñ\s]", " ", regex=True)
+reviews["textmining"] = reviews["textmining"].str.replace(r"\s{2,}", " ", regex=True)
+reviews["textmining"] = reviews["textmining"].str.strip()
+
+# Dividir reviews en entrenamiento (80%) y prueba (20%)
+train_rev, test_rev = train_test_split(reviews, test_size=0.20, random_state=42)
+train_rev = train_rev.reset_index(drop=True)
+test_rev = test_rev.reset_index(drop=True)
+
+print(f"Total de críticas: {len(reviews)}")
+print(f"Dataset de entrenamiento (train): {len(train_rev)} filas (80%)")
+print(f"Dataset de prueba (test): {len(test_rev)} filas (20%)")
+```
+
+------------------------------------------------------------------------
+
+### Modelo fastText basándose en la variable puntuacion
+
+-   Mediante la herramienta `fastText`, cree un modelo de clasificación de texto basándose en la variable `puntuacion`.
+
+Generamos un archivo temporal de texto donde cada línea contiene el prefijo identificativo de categoría (`__label__`) seguido del texto de la crítica. Posteriormente entrenamos el modelo supervisado con subpalabras y n-gramas de palabras (`wordNgrams = 2`), evaluando las predicciones sobre el conjunto de test.
+
+```{python fasttext_puntuacion}
+# Crear archivo temporal con formato fastText: "__label__<categoria> <texto>"
+with tempfile.NamedTemporaryFile(delete=False, mode="w", suffix=".txt", encoding="utf-8") as tmp:
+    file_train_punt = tmp.name
+    labels_punt = "__label__" + train_rev["puntuacion"].astype(str)
+    text_train_punt = labels_punt + " " + train_rev["textmining"]
+    tmp.write("\n".join(text_train_punt.tolist()))
+
+# Configuración e hiperparámetros del modelo fastText
+cntrl_punt = {
+    "dim": 20,
+    "lr": 0.5,
+    "epoch": 25,
+    "minCount": 5,
+    "wordNgrams": 2
+}
+
+model_punt = fasttext.train_supervised(input=file_train_punt, **cntrl_punt)
+os.remove(file_train_punt)
+
+# Predicciones con el dataset de prueba
+pred_punt, probs_punt = model_punt.predict(test_rev["textmining"].tolist(), k=1)
+test_rev["pred_puntuacion"] = [p[0].replace("__label__", "") for p in pred_punt]
+test_rev["pred_puntuacion"] = test_rev["pred_puntuacion"].astype(int)
+
+# Evaluación del modelo
+acc_punt = accuracy_score(test_rev["puntuacion"], test_rev["pred_puntuacion"])
+print(f"Precisión global (Accuracy) en clasificación por puntuación (1 a 5 estrellas): {acc_punt:.4f}\n")
+
+# Matriz de confusión
+cm_punt = pd.DataFrame(
+    confusion_matrix(test_rev["puntuacion"], test_rev["pred_puntuacion"]),
+    index=[f"Real {i}" for i in range(1, 6)],
+    columns=[f"Pred {i}" for i in range(1, 6)]
+)
+print("Matriz de Confusión:")
+print(cm_punt)
+
+print("\nInforme detallado de métricas (Classification Report):")
+print(classification_report(test_rev["puntuacion"], test_rev["pred_puntuacion"], digits=4))
+```
+
+La precisión global obtenida ronda el **64.5%**. Este resultado es muy habitual y representativo en clasificación ordinal de 5 categorías de estrellas: la mayor parte de las confusiones se concentran entre clases limítrofes (por ejemplo, entre 4 y 5 estrellas, o entre 1 y 2 estrellas), donde el vocabulario utilizado por los clientes es prácticamente idéntico. En cambio, los errores cruzados entre extremos opuestos (clasificar un 1 como un 5 o viceversa) son prácticamente nulos.
+
+------------------------------------------------------------------------
+
+### Creación de la variable categórica sentimiento
+
+-   En `reviews`, cree una variable categórica, denominada `sentimiento`, siguiendo estas indicaciones:
+    -   Si `puntuacion` es menor de 3, tomará el valor negativo.
+    -   Si `puntuacion` es igual a 3, tomará el valor neutro.
+    -   Si `puntuacion` es mayor de 3, tomará el valor positivo.
+
+```{python var_sentimiento}
+def clasificar_sentimiento(p):
+    if p < 3:
+        return "negativo"
+    elif p == 3:
+        return "neutro"
+    else:
+        return "positivo"
+
+reviews["sentimiento"] = reviews["puntuacion"].apply(clasificar_sentimiento)
+reviews["sentimiento"] = reviews["sentimiento"].astype("category")
+
+print("Distribución de frecuencias de la variable 'sentimiento' en el corpus completo:")
+dist_sent = pd.DataFrame({
+    "Frecuencia": reviews["sentimiento"].value_counts(),
+    "Porcentaje": (reviews["sentimiento"].value_counts(normalize=True) * 100).round(2).astype(str) + " %"
+})
+print(dist_sent)
+```
+
+------------------------------------------------------------------------
+
+### Modelo fastText basándose en la variable sentimiento (3 clases)
+
+-   Empleando la herramienta `fastText`, cree un modelo de clasificación de texto basándose en la variable `sentimiento`.
+
+Dividimos el dataset completo respetando la partición del 80% para entrenamiento y 20% para test, y entrenamos `fastText` con las tres etiquetas: `negativo`, `neutro` y `positivo`.
+
+```{python fasttext_sentimiento}
+# Partición 80% train y 20% test para la variable sentimiento
+train_s, test_s = train_test_split(reviews, test_size=0.20, random_state=42)
+train_s = train_s.reset_index(drop=True)
+test_s = test_s.reset_index(drop=True)
+
+# Generar archivo de entrenamiento fastText
+with tempfile.NamedTemporaryFile(delete=False, mode="w", suffix=".txt", encoding="utf-8") as tmp:
+    file_train_sent = tmp.name
+    labels_sent = "__label__" + train_s["sentimiento"].astype(str)
+    text_train_sent = labels_sent + " " + train_s["textmining"]
+    tmp.write("\n".join(text_train_sent.tolist()))
+
+cntrl_sent = {
+    "dim": 20,
+    "lr": 0.5,
+    "epoch": 25,
+    "minCount": 5,
+    "wordNgrams": 2
+}
+
+model_sent = fasttext.train_supervised(input=file_train_sent, **cntrl_sent)
+os.remove(file_train_sent)
+
+# Inferencia sobre el test
+pred_sent, _ = model_sent.predict(test_s["textmining"].tolist(), k=1)
+test_s["pred_sentimiento"] = [p[0].replace("__label__", "") for p in pred_sent]
+
+acc_sent = accuracy_score(test_s["sentimiento"], test_s["pred_sentimiento"])
+print(f"Precisión global (Accuracy) en sentimiento (3 clases): {acc_sent:.4f}\n")
+
+orden_3 = ["negativo", "neutro", "positivo"]
+cm_sent = pd.DataFrame(
+    confusion_matrix(test_s["sentimiento"], test_s["pred_sentimiento"], labels=orden_3),
+    index=[f"Real {c}" for c in orden_3],
+    columns=[f"Pred {c}" for c in orden_3]
+)
+print("Matriz de Confusión (3 clases):")
+print(cm_sent)
+
+print("\nInforme de Clasificación:")
+print(classification_report(test_s["sentimiento"], test_s["pred_sentimiento"], digits=4))
+```
+
+Al agrupar las estrellas en 3 clases, la precisión global asciende significativamente hasta el **86.35%**. Se aprecia que la clase con menor F1-score es la clase `neutro` (F1 \~ 0.50), lo cual concuerda con la naturaleza ambigua de las críticas de 3 estrellas, donde los usuarios mezclan aspectos muy positivos y muy negativos en el mismo comentario.
+
+------------------------------------------------------------------------
+
+### Modelo fastText binario (positivo vs negativo)
+
+-   Utilizando la herramienta `fastText`, cree un modelo de clasificación de texto basándose en la variable `sentimiento`, pero seleccionando únicamente los valores negativo o positivo, es decir, prescindiendo de aquellas filas donde el sentimiento sea neutro.
+
+```{python fasttext_binario}
+# Filtrar omitiendo las opiniones neutras
+reviews_bin = reviews[reviews["sentimiento"] != "neutro"].copy().reset_index(drop=True)
+print(f"Total de críticas en el dataset binario (sin neutros): {len(reviews_bin)}")
+
+# Partición 80/20 sobre el dataset binario
+train_b, test_b = train_test_split(reviews_bin, test_size=0.20, random_state=42)
+train_b = train_b.reset_index(drop=True)
+test_b = test_b.reset_index(drop=True)
+
+# Archivo de entrenamiento temporal
+with tempfile.NamedTemporaryFile(delete=False, mode="w", suffix=".txt", encoding="utf-8") as tmp:
+    file_train_bin = tmp.name
+    labels_bin = "__label__" + train_b["sentimiento"].astype(str)
+    text_train_bin = labels_bin + " " + train_b["textmining"]
+    tmp.write("\n".join(text_train_bin.tolist()))
+
+model_bin = fasttext.train_supervised(input=file_train_bin, dim=20, lr=0.5, epoch=25, minCount=5, wordNgrams=2)
+os.remove(file_train_bin)
+
+# Predicciones
+pred_bin, _ = model_bin.predict(test_b["textmining"].tolist(), k=1)
+test_b["pred_ft_bin"] = [p[0].replace("__label__", "") for p in pred_bin]
+
+acc_ft_bin = accuracy_score(test_b["sentimiento"], test_b["pred_ft_bin"])
+print(f"Precisión global (Accuracy) fastText Binario: {acc_ft_bin:.4f}\n")
+
+orden_bin = ["negativo", "positivo"]
+cm_ft_bin = pd.DataFrame(
+    confusion_matrix(test_b["sentimiento"], test_b["pred_ft_bin"], labels=orden_bin),
+    index=[f"Real {c}" for c in orden_bin],
+    columns=[f"Pred {c}" for c in orden_bin]
+)
+print("Matriz de Confusión (fastText Binario):")
+print(cm_ft_bin)
+
+print("\nInforme de Clasificación:")
+print(classification_report(test_b["sentimiento"], test_b["pred_ft_bin"], digits=4))
+```
+
+Al prescindir de la clase neutra, el rendimiento de `fastText` se dispara hasta un excelente **97.48% de Accuracy**, con un F1-score de 0.9279 en la clase negativa y 0.9847 en la clase positiva.
+
+------------------------------------------------------------------------
+
+### Modelo de Regresión Logística binaria sobre Matriz Documento-Término (DTM)
+
+-   Empleando la Regresión Logística, cree un modelo de clasificación de texto basándose en la variable `sentimiento`, pero seleccionando únicamente los valores negativo o positivo.
+
+Construimos la Matriz Documento-Término (DTM) con `CountVectorizer` aplicando un filtro de frecuencia mínima de aparición (`min_df = 4`) como hace el profesor en las prácticas. Entrenamos un modelo de `LogisticRegression` con el solver `lbfgs` y evaluamos sobre el conjunto de test.
+
+```{python logit_binario}
+# Construcción de la Matriz Documento-Término (DTM)
+vectorizer = CountVectorizer(min_df=4)
+train_dtm = vectorizer.fit_transform(train_b["textmining"])
+test_dtm = vectorizer.transform(test_b["textmining"])
+
+print(f"Dimensiones train_dtm: {train_dtm.shape} (documentos, términos)")
+print(f"Dimensiones test_dtm:  {test_dtm.shape} (documentos, términos)")
+
+# Entrenamiento del modelo de Regresión Logística
+model_lr = LogisticRegression(solver="lbfgs", max_iter=1000, random_state=42)
+model_lr.fit(train_dtm, train_b["sentimiento"])
+
+# Inferencia
+test_b["pred_lr"] = model_lr.predict(test_dtm)
+acc_lr = accuracy_score(test_b["sentimiento"], test_b["pred_lr"])
+print(f"\nPrecisión global (Accuracy) Regresión Logística: {acc_lr:.4f}\n")
+
+cm_lr = pd.DataFrame(
+    confusion_matrix(test_b["sentimiento"], test_b["pred_lr"], labels=orden_bin),
+    index=[f"Real {c}" for c in orden_bin],
+    columns=[f"Pred {c}" for c in orden_bin]
+)
+print("Matriz de Confusión (Regresión Logística):")
+print(cm_lr)
+
+print("\nInforme de Clasificación:")
+print(classification_report(test_b["sentimiento"], test_b["pred_lr"], digits=4))
+```
+
+------------------------------------------------------------------------
+
+### Algoritmo Naive Bayes binario sobre Matriz Documento-Término (DTM)
+
+-   Usando el algoritmo Naive Bayes, cree un modelo de clasificación de texto basándose en la variable `sentimiento`, pero seleccionando únicamente los valores negativo o positivo.
+
+Empleamos el algoritmo `MultinomialNB()` de `scikit-learn`, idóneo para datos dispersos de recuento de frecuencias de palabras (DTM).
+
+```{python naive_bayes_binario}
+# Entrenamiento del algoritmo Naive Bayes Multinomial
+model_nb = MultinomialNB()
+model_nb.fit(train_dtm, train_b["sentimiento"])
+
+# Inferencia
+test_b["pred_nb"] = model_nb.predict(test_dtm)
+acc_nb = accuracy_score(test_b["sentimiento"], test_b["pred_nb"])
+print(f"Precisión global (Accuracy) Naive Bayes: {acc_nb:.4f}\n")
+
+cm_nb = pd.DataFrame(
+    confusion_matrix(test_b["sentimiento"], test_b["pred_nb"], labels=orden_bin),
+    index=[f"Real {c}" for c in orden_bin],
+    columns=[f"Pred {c}" for c in orden_bin]
+)
+print("Matriz de Confusión (Naive Bayes):")
+print(cm_nb)
+
+print("\nInforme de Clasificación:")
+print(classification_report(test_b["sentimiento"], test_b["pred_nb"], digits=4))
+```
+
+------------------------------------------------------------------------
+
+### Comparativa de modelos y conclusiones
+
+Resumimos los resultados de los modelos entrenados en el análisis de sentimiento:
+
+```{python comparativa_modelos}
+df_comparativa = pd.DataFrame({
+    "Modelo": [
+        "fastText (Puntuación 1 a 5)", 
+        "fastText (Sentimiento 3 clases)", 
+        "fastText (Binario Pos/Neg)", 
+        "Regresión Logística (Binario DTM)", 
+        "Naive Bayes Multinomial (Binario DTM)"
+    ],
+    "Número de Clases": [5, 3, 2, 2, 2],
+    "Accuracy": [acc_punt, acc_sent, acc_ft_bin, acc_lr, acc_nb]
+})
+
+df_comparativa["Accuracy"] = (df_comparativa["Accuracy"] * 100).round(2).astype(str) + " %"
+print(df_comparativa.to_string(index=False))
+```
+
+**Conclusiones pedagógicas:** 1. **Granularidad de las clases:** Clasificar 5 estrellas resulta mucho más complejo (64.54% de accuracy) debido al solapamiento léxico entre valoraciones contiguas (4 vs 5 estrellas y 1 vs 2 estrellas). Al condensar la escala en 3 sentimientos (`negativo`, `neutro`, `positivo`), el rendimiento asciende notablemente al 86.35%. 2. **Impacto de la clase neutra:** La eliminación de la clase neutra (3 estrellas) suprime la principal fuente de incertidumbre léxica, alcanzando tasas de acierto superiores al **97%** en todos los clasificadores binarios. 3. **Comparativa algorítmica binaria:** En la tarea binaria, los tres algoritmos presentan un comportamiento sobresaliente y muy parejo: **fastText** (97.48%) y la **Regresión Logística** (97.39%) obtienen prácticamente el mismo nivel de precisión, mientras que **Naive Bayes** (97.08%) se sitúa ligeramente por detrás pero con una velocidad de ajuste y simplicidad computacional excepcional.
+
+------------------------------------------------------------------------
+
+# Pregunta 3. Grandes Modelos de Lenguaje (LLM)
+
+El dataset `documentos` contiene 120 oraciones.
+
+## Descripción de las columnas
+
+-   **doc_id:** Identificador del documento.
+-   **texto:** El texto del documento.
+
+Sabemos de antemano que cada uno de los documentos pertenece a una de estas ocho categorías: Cine, Cocina, Deportes, Economía, Historia, Literatura, Naturaleza, Tecnología. De cada categoría hay 15 documentos.
+
+## Se pide
+
+### Clustering con BERT
+
+Empleando Sentence Transformers, utilizar el modelo `hiiamsid/sentence_similarity_spanish_es` para obtener los embeddings de los documentos.
+
+-   Visualizar los embeddings mediante UMAP.
+-   Realizar el clustering, asignando a cada documento una de las ocho categorías anteriormente indicadas.
+
+### Clustering con Nomic Bert
+
+Empleando Ollama, usar el modelo `nomic-embed-text-v2-moe` para obtener los embeddings de los documentos.
+
+-   Visualizar los embeddings mediante UMAP.
+-   Realizar el clustering, asignando a cada documento una de las ocho categorías anteriormente señaladas.
+
+### Clasificación de texto con Qwen3
+
+Empleando Ollama, usar el modelo `qwen3:4b` para clasificar los documentos, asignando a cada documento una de las ocho categorías anteriormente mencionadas.
+
+Recomendaciones a seguir: No utilizar la salida estructurada, incluir en el prompt las ocho categorías. El thinking debe estar activado.
+
+### Comparar la clasificación de Qwen3 con el clustering de BERT
+
+Mostrar aquellos documentos no coincidentes, es decir, la categoría asignada con Qwen3 es distinta al grupo asignado con BERT.
+
+### Comparar la clasificación de Qwen3 con el clustering de Nomic Bert
+
+Mostrar aquellos documentos no coincidentes, es decir, la categoría asignada con Qwen3 es distinta al grupo asignado con Nomic Bert.
+
+------------------------------------------------------------------------
+
+# Pregunta 4. Grandes Modelos de Lenguaje (LLM)
+
+Queremos extraer cierta información de varias páginas web de Wikipedia (URL), referentes a 10 personajes ilustres: `"Albert Camus"`, `"Marie Curie"`, `"Albert Einstein"`, `"Alexander Fleming"`, `"Mahatma Gandhi"`, `"Gabriel García Márquez"`, `"Nelson Mandela"`, `"Severo Ochoa"`, `"Max Planck"` y `"Santiago Ramón y Cajal"`.
+
+## Páginas web (URL) a procesar
+
+```{python}
+urls = [
+    "https://es.wikipedia.org/wiki/Albert_Camus",
+    "https://es.wikipedia.org/wiki/Marie_Curie",
+    "https://es.wikipedia.org/wiki/Albert_Einstein",
+    "https://es.wikipedia.org/wiki/Alexander_Fleming",
+    "https://es.wikipedia.org/wiki/Mahatma_Gandhi",
+    "https://es.wikipedia.org/wiki/Gabriel_García_Márquez",
+    "https://es.wikipedia.org/wiki/Nelson_Mandela",
+    "https://es.wikipedia.org/wiki/Severo_Ochoa",
+    "https://es.wikipedia.org/wiki/Max_Planck",
+    "https://es.wikipedia.org/wiki/Santiago_Ramón_y_Cajal"
+]
+```
+
+De cada personaje, queremos obtener la siguiente información:
+
+-   **Nombre:** Nombre de la persona.
+-   **Nacimiento:** Fecha y lugar de nacimiento.
+-   **Resumen:** Un resumen de su principal logro.
+-   **Nobel:** Disciplina en la que ganó el Premio Nobel.
+-   **Año:** Año en que ganó el Premio Nobel.
+-   **Fallecimiento:** Fecha y lugar de fallecimiento.
+
+Se puede dar el caso, en el que algún personaje tenga más de un premio nobel (Marie Curie).
+
+También, se puede dar el caso, en el que algún personaje nunca fue galardonado con el premio nobel (Mahatma Gandhi).
+
+## Se pide
+
+-   Utilizar la API Web fetch de Ollama para extraer el contenido de las páginas web indicadas.
+
+### Gemini
+
+Utilizando la librería `chatlas`:
+
+-   Definir la salida estructurada a utilizar en el modelo.
+-   Usar el modelo Gemini para obtener la información requerida.
+
+Es aconsejable hacer una pausa (30 o 45 segundos) entre peticiones, para no saturar el servidor.
+
+### Ollama
+
+-   Definir la salida estructurada a utilizar en el modelo.
+-   Usar el modelo `qwen3:4b` para obtener la información requerida.
