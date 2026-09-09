@@ -1,0 +1,121 @@
+[
+  {
+    "nombre": "Albert Camus",
+    "nacimiento": "7 de noviembre de 1913",
+    "resumen": "Fue un novelista, ensayista, dramaturgo, filósofo y periodista francés con ascendencia española y nacido en la Argelia francesa. Se le ha atribuido la conformación del pensamiento filosófico conocido como absurdismo, aunque en su texto El enigma el propio Camus reniega de la etiqueta de «profeta del absurdo». Se lo ha asociado frecuentemente con el existencialismo francés, aunque Camus siempre se consideró ajeno a él. Pese a su alejamiento consciente con respecto al nihilismo, rescata de él la idea de libertad individual. Formó parte de la resistencia francesa durante la ocupación alemana y se relacionó con los movimientos libertarios de la posguerra. En 1957, se le concedió el Premio Nobel de Literatura por «el conjunto de una obra que pone de relieve los principales problemas que se plantean en la conciencia de los hombres de la actualidad».",
+    "premios_nobel": [
+      {
+        "disciplina": "Literatura",
+        "año": 1957
+      }
+    ],
+    "fallecimiento": "4 de enero de 1960"
+  },
+  {
+    "nombre": "Maria Salomea Skłodowska",
+    "nacimiento": "7 de noviembre de 1867, Varsovia (Tierra del Vístula, Imperio ruso)",
+    "resumen": "Pionera en el campo de la radiactividad, es la primera y única persona en recibir dos premios Nobel en distintas especialidades científicas: Física y Química. También fue la primera mujer en ocupar el puesto de profesora en la Universidad de París y la primera en recibir sepultura con honores en el Panteón de París por méritos propios en 1995.",
+    "premios_nobel": [
+      {
+        "disciplina": "Física",
+        "año": 1903
+      },
+      {
+        "disciplina": "Química",
+        "año": 1911
+      }
+    ],
+    "fallecimiento": "4 de julio de 1934, Passy (Francia)"
+  },
+  {
+    "nombre": "Albert Einstein",
+    "nacimiento": "14 de marzo de 1879, Ulm, Imperio alemán",
+    "resumen": "Fue un físico alemán de origen judío, nacionalizado después suizo, austriaco y estadounidense. Se le considera el científico más importante, conocido y popular del siglo XX. En 1905 publicó su teoría de la relatividad especial, en la que incorporó conceptos y fenómenos estudiados antes por Henri Poincaré y Hendrik Lorentz. Dedujo la ecuación E=mc². En 1915 presentó la teoría de la relatividad general, reformulando el concepto de gravedad. En 1921 obtuvo el Premio Nobel de Física por el efecto fotoeléctrico. En 1919, las observaciones británicas de un eclipse solar confirmaron sus predicciones sobre la curvatura de la luz. Ante el ascenso del nazismo, abandonó Alemania en 1932 y se nacionalizó estadounidense en 1940. Fue proclamado «personaje del siglo XX» y el más preeminente científico por la revista Time.",
+    "premios_nobel": [
+      {
+        "disciplina": "Física",
+        "año": 1921
+      }
+    ],
+    "fallecimiento": "18 de abril de 1955, Princeton (Nueva Jersey), Estados Unidos"
+  },
+  {
+    "nombre": "Alexander Fleming",
+    "nacimiento": "6 de agosto de 1881",
+    "resumen": "Descubridor de la penicilina y la lisozima",
+    "premios_nobel": [
+      {
+        "disciplina": "Medicina",
+        "año": 1945
+      }
+    ],
+    "fallecimiento": "11 de marzo de 1955"
+  },
+  {
+    "nombre": "Mohandas Karamchand Gandhi",
+    "nacimiento": "2 de octubre de 1869",
+    "resumen": "Dirigente más destacado del movimiento de independencia de la India contra el Raj británico, practicó la desobediencia civil no violenta, pacifista, político, pensador y abogado hinduista indio. Inspirador de la marcha de la sal y defensor de la no violencia activa.",
+    "premios_nobel": [],
+    "fallecimiento": "30 de enero de 1948"
+  },
+  {
+    "nombre": "Gabriel José García Márquez",
+    "nacimiento": "6 de marzo de 1927",
+    "resumen": "Escritor, guionista y periodista colombiano reconocido por sus novelas y cuentos, especialmente por el realismo mágico. Su novela más conocida, Cien años de soledad, es una de las más representativas de la corriente literaria del realismo mágico. Fue uno de los exponentes centrales del boom latinoamericano.",
+    "premios_nobel": [
+      {
+        "disciplina": "Literatura",
+        "año": 1982
+      }
+    ],
+    "fallecimiento": "17 de abril de 2014"
+  },
+  {
+    "nombre": "Nelson Mandela",
+    "nacimiento": "18 de julio de 1918",
+    "resumen": "Fue un abogado, activista contra el apartheid, político y filántropo sudafricano que presidió el gobierno de su país de 1994 a 1999. Fue el primer mandatario afrodescendiente que encabezó el poder ejecutivo, y el primero en resultar elegido por sufragio universal en su país. Su gobierno se dedicó a desmontar la estructura social y política heredada del apartheid a través del combate del racismo institucionalizado, la pobreza, la desigualdad social y la promoción de la reconciliación social.",
+    "premios_nobel": [
+      {
+        "disciplina": "Paz",
+        "año": 1993
+      }
+    ],
+    "fallecimiento": "5 de diciembre de 2013"
+  },
+  {
+    "nombre": "Severo Ochoa de Albornoz",
+    "nacimiento": "24 de septiembre de 1905",
+    "resumen": "Fue un médico y científico español, nacionalizado estadounidense en 1956, de renombre internacional. En 1959 fue galardonado con el Premio Nobel de Fisiología o Medicina, junto al estadounidense Arthur Kornberg. Conocido por la síntesis del ácido ribonucleico (ARN).",
+    "premios_nobel": [
+      {
+        "disciplina": "Fisiología o Medicina",
+        "año": 1959
+      }
+    ],
+    "fallecimiento": "1 de noviembre de 1993"
+  },
+  {
+    "nombre": "Max Karl Ernst Ludwig Planck",
+    "nacimiento": "23 de abril de 1858",
+    "resumen": "Es considerado el fundador de la teoría cuántica y fue galardonado con el Premio Nobel de Física en 1918.",
+    "premios_nobel": [
+      {
+        "disciplina": "Física",
+        "año": 1918
+      }
+    ],
+    "fallecimiento": "4 de octubre de 1947"
+  },
+  {
+    "nombre": "Santiago Ramón y Cajal",
+    "nacimiento": "1 de mayo de 1852",
+    "resumen": "Fue pionero en la descripción de las diez sinapsis que componen la retina. Mediante sus investigaciones sobre los mecanismos que gobiernan la morfología y los procesos conectivos de las células nerviosas, desarrolló una teoría nueva y revolucionaria que empezó a ser llamada la «doctrina de la neurona», basada en que el tejido cerebral está compuesto por células individuales.",
+    "premios_nobel": [
+      {
+        "disciplina": "Medicina",
+        "año": 1906
+      }
+    ],
+    "fallecimiento": "17 de octubre de 1934"
+  }
+]

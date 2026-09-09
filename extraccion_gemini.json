@@ -1,0 +1,121 @@
+[
+  {
+    "nombre": "Albert Camus",
+    "nacimiento": "7 de noviembre de 1913, Mondovi, Argelia francesa",
+    "resumen": "Escritor, filósofo y novelista francés, artífice del absurdismo y galardonado con el Premio Nobel de Literatura por una obra que aborda los dilemas de la conciencia humana contemporánea.",
+    "premios_nobel": [
+      {
+        "disciplina": "Literatura",
+        "año": 1957
+      }
+    ],
+    "fallecimiento": "4 de enero de 1960, Villeblevin, Francia"
+  },
+  {
+    "nombre": "Maria Salomea Skłodowska-Curie",
+    "nacimiento": "7 de noviembre de 1867, Varsovia",
+    "resumen": "Pionera en el campo de la radiactividad, es la primera y única persona en recibir dos premios Nobel en distintas especialidades científicas: Física y Química.",
+    "premios_nobel": [
+      {
+        "disciplina": "Física",
+        "año": 1903
+      },
+      {
+        "disciplina": "Química",
+        "año": 1911
+      }
+    ],
+    "fallecimiento": "4 de julio de 1934, Passy"
+  },
+  {
+    "nombre": "Albert Einstein",
+    "nacimiento": "14 de marzo de 1879, Ulm, Imperio alemán",
+    "resumen": "Desarrolló la teoría de la relatividad (especial y general), formuló la ecuación de equivalencia masa-energía (E=mc²) y explicó el efecto fotoeléctrico, convirtiéndose en el científico más importante del siglo XX.",
+    "premios_nobel": [
+      {
+        "disciplina": "Física",
+        "año": 1921
+      }
+    ],
+    "fallecimiento": "18 de abril de 1955, Princeton (Nueva Jersey), Estados Unidos"
+  },
+  {
+    "nombre": "Alexander Fleming",
+    "nacimiento": "6 de agosto de 1881, Darvel, Escocia",
+    "resumen": "Descubridor de la penicilina y de la enzima antimicrobiana lisozima.",
+    "premios_nobel": [
+      {
+        "disciplina": "Fisiología o Medicina",
+        "año": 1945
+      }
+    ],
+    "fallecimiento": "11 de marzo de 1955, Londres, Inglaterra"
+  },
+  {
+    "nombre": "Mohandas Karamchand Gandhi",
+    "nacimiento": "2 de octubre de 1869, Porbandar, Guyarat, presidencia de Bombay, Imperio de la India",
+    "resumen": "Dirigente más destacado del movimiento de independencia de la India contra el Raj británico mediante la desobediencia civil no violenta, además de pacifista, político, pensador y abogado.",
+    "premios_nobel": [],
+    "fallecimiento": "30 de enero de 1948, Nueva Delhi, Unión de la India"
+  },
+  {
+    "nombre": "Gabriel José García Márquez",
+    "nacimiento": "6 de marzo de 1927, Aracataca, Magdalena, Colombia",
+    "resumen": "Escritor, guionista y periodista colombiano, uno de los máximos exponentes del realismo mágico y del boom latinoamericano, célebre especialmente por su novela Cien años de soledad.",
+    "premios_nobel": [
+      {
+        "disciplina": "Literatura",
+        "año": 1982
+      }
+    ],
+    "fallecimiento": "17 de abril de 2014, Ciudad de México, México"
+  },
+  {
+    "nombre": "Nelson Rolihlahla Mandela",
+    "nacimiento": "18 de julio de 1918, Mvezo, provincia del Cabo Oriental, Unión Sudafricana",
+    "resumen": "Abogado, activista contra el apartheid, político y filántropo sudafricano que presidió el gobierno de su país de 1994 a 1999, siendo el primer mandatario afrodescendiente elegido por sufragio universal en Sudáfrica.",
+    "premios_nobel": [
+      {
+        "disciplina": "Paz",
+        "año": 1993
+      }
+    ],
+    "fallecimiento": "5 de diciembre de 2013, Johannesburgo, Gauteng, Sudáfrica"
+  },
+  {
+    "nombre": "Severo Ochoa de Albornoz",
+    "nacimiento": "24 de septiembre de 1905, Luarca (España)",
+    "resumen": "Médico y científico español, conocido por la síntesis del ácido ribonucleico (ARN) y por sus investigaciones en bioquímica y biología molecular.",
+    "premios_nobel": [
+      {
+        "disciplina": "Fisiología o Medicina",
+        "año": 1959
+      }
+    ],
+    "fallecimiento": "1 de noviembre de 1993, Madrid (España)"
+  },
+  {
+    "nombre": "Max Karl Ernst Ludwig Planck",
+    "nacimiento": "23 de abril de 1858, Kiel (Ducado de Holstein, Confederación Germánica)",
+    "resumen": "Es considerado el fundador de la teoría cuántica y fue galardonado con el Premio Nobel de Física.",
+    "premios_nobel": [
+      {
+        "disciplina": "Física",
+        "año": 1918
+      }
+    ],
+    "fallecimiento": "4 de octubre de 1947, Gotinga (ocupación aliada en Alemania)"
+  },
+  {
+    "nombre": "Santiago Ramón y Cajal",
+    "nacimiento": "1 de mayo de 1852, Petilla de Aragón, Navarra (España)",
+    "resumen": "Médico y científico pionero en la neurohistología, formulador de la doctrina de la neurona, considerado el padre de la neurociencia.",
+    "premios_nobel": [
+      {
+        "disciplina": "Medicina",
+        "año": 1906
+      }
+    ],
+    "fallecimiento": "17 de octubre de 1934, Madrid (España)"
+  }
+]

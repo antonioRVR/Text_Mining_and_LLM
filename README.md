@@ -23,6 +23,21 @@ Proyecto académico enfocado en **Minería de Texto, Clasificación de Sentimien
   - **Regresión Logística (DTM CountVectorizer)**: Accuracy **97.39%**.
   - **Naive Bayes Multinomial (DTM CountVectorizer)**: Accuracy **97.08%**.
 
+### 3. Clustering y Clasificación con Grandes Modelos de Lenguaje (LLMs)
+- **Clustéring de Embeddings (BERT vs Nomic)**:
+  - **SentenceTransformers**: Representación densa con `hiiamsid/sentence_similarity_spanish_es` (768D), proyección UMAP 2D y agrupación K-Means ($k=8$).
+  - **Nomic Embeddings (Ollama)**: Representación de alta fidelidad con `nomic-embed-text-v2-moe`, proyección UMAP 2D y K-Means ($k=8$).
+- **Clasificación Generativa con Razonamiento (`qwen3:4b`)**:
+  - Clasificación de 120 documentos con Ollama `qwen3:4b` manteniendo activado el razonamiento profundo (`think=True`) sin salidas estructuradas.
+- **Análisis de Discrepancias Lingüísticas**: Comparativa detallada entre la agrupación no supervisada de similitud vectorial y la inferencia intencional del LLM generativo.
+
+### 4. Extracción de Información Estructurada de la Web (Wikipedia)
+- **Web Fetching Automatizado**: Recuperación e indexación del contenido en Markdown de 10 páginas web de personajes ilustres mediante la API **Ollama Web fetch**.
+- **Modelado Estructurado con Pydantic**: Diseño de esquemas tipados (`BaseModel`, `PremioNobel`, `PersonajeIlustre`) soportando múltiples galardones (Marie Curie) y 0 premios Nobel (Mahatma Gandhi).
+- **Inferencia en la Nube con Google Gemini (`chatlas`)**: Extracción estructurada utilizando `ChatGoogle(model="gemini-flash-lite-latest")` respetando pausas entre llamadas para control de cuota de API.
+- **Inferencia Local con Ollama (`qwen3:4b`)**: Extracción forzada mediante gramática JSON Schema (`format=PersonajeIlustre.model_json_schema()`) en entorno local GPU con `think=False`.
+- **Comparativa Directa**: Matriz de concordancia y análisis técnico comparativo entre modelos en la nube y modelos locales.
+
 ---
 
 ## 📂 Estructura del Repositorio
@@ -34,6 +49,10 @@ Proyecto académico enfocado en **Minería de Texto, Clasificación de Sentimien
 ├── evaluacion_antonio_local.Rmd   # Código fuente principal en RMarkdown (R + Python)
 ├── evaluacion_antonio.html        # Reporte interactivo completo renderizado
 ├── red_interactiva_prado.html     # Grafo interactivo PyVis de coocurrencias
+├── clasificacion_qwen3.csv        # Clasificaciones de 120 documentos generadas por Qwen3:4b
+├── wikipedia_contenidos.json      # Páginas de Wikipedia recuperadas con Ollama Web fetch
+├── extraccion_gemini.json         # Datos biográficos estructurados extraídos con Gemini
+├── extraccion_qwen3.json          # Datos biográficos estructurados extraídos con Qwen3:4b
 ├── prado.csv                      # Dataset de tuits del Museo del Prado
 ├── reviews.csv                    # Dataset de 13.000 críticas de alojamiento
 ├── documentos.csv                 # Dataset de oraciones categorizadas
@@ -49,10 +68,11 @@ Para ejecutar el código en **RMarkdown / RStudio**, asegúrate de tener instala
 
 - **R** (>= 4.0) y **RStudio**
 - **Python** (>= 3.10)
+- **Ollama** con los modelos `qwen3:4b` y `nomic-embed-text-v2-moe`
 - Librerías de R: `reticulate`, `readr`, `rmarkdown`, `knitr`
 - Librerías de Python (en el entorno virtual `env_textmining`):
   ```bash
-  pip install pandas regex spacy nltk scikit-learn gensim umap-learn matplotlib fasttext-wheel sentence-transformers ollama chatlas pydantic
+  pip install pandas regex spacy nltk scikit-learn gensim umap-learn matplotlib fasttext-wheel sentence-transformers ollama chatlas pydantic google-genai
   python -m spacy download es_core_news_sm
   ```
 
@@ -60,3 +80,4 @@ Para ejecutar el código en **RMarkdown / RStudio**, asegúrate de tener instala
 
 ## ✒️ Autor
 - **Antonio Ramón Vázquez Ramírez** (`antonioRVR`)
+

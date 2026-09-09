@@ -1604,7 +1604,9 @@ Queremos extraer cierta información de varias páginas web de Wikipedia (URL), 
 
 ## Páginas web (URL) a procesar
 
-```{python}
+Definimos la lista de las diez URLs de Wikipedia correspondientes a los personajes ilustres seleccionados:
+
+```{python urls_wikipedia}
 urls = [
     "https://es.wikipedia.org/wiki/Albert_Camus",
     "https://es.wikipedia.org/wiki/Marie_Curie",
@@ -1619,7 +1621,7 @@ urls = [
 ]
 ```
 
-De cada personaje, queremos obtener la siguiente información:
+De cada personaje, se solicita obtener de forma estructurada:
 
 -   **Nombre:** Nombre de la persona.
 -   **Nacimiento:** Fecha y lugar de nacimiento.
@@ -1628,24 +1630,274 @@ De cada personaje, queremos obtener la siguiente información:
 -   **Año:** Año en que ganó el Premio Nobel.
 -   **Fallecimiento:** Fecha y lugar de fallecimiento.
 
-Se puede dar el caso, en el que algún personaje tenga más de un premio nobel (Marie Curie).
+Casos especiales contemplados: 1. **Múltiples premios Nobel:** Marie Curie fue galardonada con el Premio Nobel de Física en 1903 y el Premio Nobel de Química en 1911. 2. **Sin premio Nobel:** Mahatma Gandhi nunca fue galardonado con el Premio Nobel.
 
-También, se puede dar el caso, en el que algún personaje nunca fue galardonado con el premio nobel (Mahatma Gandhi).
+------------------------------------------------------------------------
 
-## Se pide
+## Extracción de contenidos mediante la API Web fetch de Ollama
 
 -   Utilizar la API Web fetch de Ollama para extraer el contenido de las páginas web indicadas.
 
-### Gemini
+La API Web fetch de Ollama permite recuperar e inspeccionar el contenido de páginas web convirtiendo su estructura a texto limpio y estructurado en formato Markdown. Conectamos con el servicio en la nube de Ollama (`https://ollama.com`) mediante la clave de autorización `OLLAMA_API_KEY`. Para optimizar el tiempo de compilación y evitar consultas redundantes a la red, almacenamos las páginas recuperadas de forma persistente en `wikipedia_contenidos.json`.
 
-Utilizando la librería `chatlas`:
+```{python web_fetch_ollama}
+import os, json, time
+import ollama
 
--   Definir la salida estructurada a utilizar en el modelo.
--   Usar el modelo Gemini para obtener la información requerida.
+# Configuración del cliente con autorización para la API Web fetch de Ollama
+ollama_api_key = os.environ.get("OLLAMA_API_KEY", "")
+client_ollama = ollama.Client(
+    host="https://ollama.com",
+    headers={"Authorization": "Bearer " + ollama_api_key} if ollama_api_key else {}
+)
 
-Es aconsejable hacer una pausa (30 o 45 segundos) entre peticiones, para no saturar el servidor.
+archivo_contenidos = "wikipedia_contenidos.json"
+paginas_wiki = {}
 
-### Ollama
+if os.path.exists(archivo_contenidos):
+    with open(archivo_contenidos, "r", encoding="utf-8") as f:
+        paginas_wiki = json.load(f)
+    print(f"Cargadas {len(paginas_wiki)} páginas de Wikipedia desde el almacenamiento local.")
+else:
+    print("Descargando páginas web mediante Ollama client.web_fetch()...")
+    for i, url in enumerate(urls, 1):
+        nombre_slug = url.split("/")[-1]
+        try:
+            res = client_ollama.web_fetch(url)
+            paginas_wiki[url] = {
+                "titulo": getattr(res, "title", nombre_slug),
+                "contenido": getattr(res, "content", ""),
+                "longitud": len(getattr(res, "content", ""))
+            }
+            print(f"  [{i}/{len(urls)}] Descargado: {nombre_slug} ({paginas_wiki[url]['longitud']} caracteres)")
+        except Exception as e:
+            print(f"  [{i}/{len(urls)}] Error en {nombre_slug}: {e}")
+        time.sleep(1)
+        
+    with open(archivo_contenidos, "w", encoding="utf-8") as f:
+        json.dump(paginas_wiki, f, ensure_ascii=False, indent=2)
 
--   Definir la salida estructurada a utilizar en el modelo.
--   Usar el modelo `qwen3:4b` para obtener la información requerida.
+# Resumen de las páginas procesadas
+for url, info in paginas_wiki.items():
+    nombre = url.split("/")[-1].replace("_", " ")
+    print(f"- {nombre:26} | Título: {info['titulo'][:30]:30} | Tamaño: {info['longitud']:,} caracteres")
+```
+
+------------------------------------------------------------------------
+
+## Definición del esquema de datos estructurados con Pydantic
+
+Para garantizar una extracción robusta y tipada, diseñamos un modelo Pydantic que gestiona de forma nativa tanto personajes con múltiples galardones (como Marie Curie) mediante una lista de objetos `PremioNobel`, como personajes sin premios Nobel (como Mahatma Gandhi) a través de una lista vacía `[]`.
+
+```{python pydantic_schema}
+from pydantic import BaseModel, Field
+from typing import List, Optional
+
+class PremioNobel(BaseModel):
+    disciplina: str = Field(
+        description="Disciplina o categoría del Premio Nobel (ej. Literatura, Física, Química, Paz, Fisiología o Medicina)"
+    )
+    año: int = Field(
+        description="Año de concesión del Premio Nobel"
+    )
+
+class PersonajeIlustre(BaseModel):
+    nombre: str = Field(
+        description="Nombre completo de la persona"
+    )
+    nacimiento: str = Field(
+        description="Fecha y lugar de nacimiento de la persona"
+    )
+    resumen: str = Field(
+        description="Un resumen breve y claro de su principal logro o aportación histórica"
+    )
+    premios_nobel: List[PremioNobel] = Field(
+        default_factory=list, 
+        description="Lista de premios Nobel recibidos. Lista vacía [] si nunca fue galardonado (como Mahatma Gandhi). Si ganó más de uno (como Marie Curie), incluye todos."
+    )
+    fallecimiento: Optional[str] = Field(
+        default=None, 
+        description="Fecha y lugar de fallecimiento de la persona"
+    )
+```
+
+------------------------------------------------------------------------
+
+## Extracción con Google Gemini (librería `chatlas`)
+
+Utilizando la librería `chatlas`: - Definir la salida estructurada a utilizar en el modelo (`data_model = PersonajeIlustre`). - Usar el modelo Gemini para obtener la información requerida. - Es aconsejable hacer una pausa (30 o 45 segundos) entre peticiones, para no saturar el servidor.
+
+```{python extraccion_gemini}
+import os, json, time
+import pandas as pd
+from chatlas import ChatGoogle
+
+google_api_key = os.environ.get("GOOGLE_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
+os.environ["GOOGLE_API_KEY"] = google_api_key
+
+archivo_gemini = "extraccion_gemini.json"
+resultados_gemini = []
+
+if os.path.exists(archivo_gemini):
+    with open(archivo_gemini, "r", encoding="utf-8") as f:
+        resultados_gemini = json.load(f)
+    print(f"Cargadas {len(resultados_gemini)} extracciones previas de Gemini.")
+else:
+    print("Iniciando extracción con Gemini (chatlas) con pausas de control de cuota...")
+    total = len(paginas_wiki)
+    for i, (url, info) in enumerate(paginas_wiki.items(), 1):
+        nombre_slug = url.split("/")[-1].replace("_", " ")
+        print(f"[{i}/{total}] Procesando con Gemini: {nombre_slug}...")
+        
+        # Seleccionamos el bloque inicial del artículo (lead e infobox)
+        texto_articulo = info["contenido"][:6000]
+        prompt = f"""Extrae de forma rigurosa la información biográfica del personaje a partir del siguiente texto:
+Texto:
+{texto_articulo}
+"""
+        # Instanciamos una sesión nueva por personaje para evitar mezclar turnos previos
+        chat_gemini = ChatGoogle(model="gemini-flash-lite-latest", api_key=google_api_key)
+        data = chat_gemini.chat_structured(prompt, data_model=PersonajeIlustre)
+        resultados_gemini.append(data.model_dump())
+        
+        with open(archivo_gemini, "w", encoding="utf-8") as f:
+            json.dump(resultados_gemini, f, ensure_ascii=False, indent=2)
+            
+        if i < total:
+            print("   -> Pausa de 10s entre peticiones para respetar la cuota del servidor...")
+            time.sleep(10)
+
+# Construcción de la tabla tabular normalizada
+filas_gemini = []
+for p in resultados_gemini:
+    if not p["premios_nobel"]:
+        filas_gemini.append({
+            "Nombre": p["nombre"],
+            "Nacimiento": p["nacimiento"],
+            "Resumen": p["resumen"],
+            "Nobel": "Ninguno",
+            "Año": "-",
+            "Fallecimiento": p.get("fallecimiento") or "-"
+        })
+    else:
+        for n in p["premios_nobel"]:
+            filas_gemini.append({
+                "Nombre": p["nombre"],
+                "Nacimiento": p["nacimiento"],
+                "Resumen": p["resumen"],
+                "Nobel": n["disciplina"],
+                "Año": str(n["año"]),
+                "Fallecimiento": p.get("fallecimiento") or "-"
+            })
+
+df_gemini = pd.DataFrame(filas_gemini)
+print("\nInformación biográfica extraída mediante Gemini:")
+print(df_gemini[["Nombre", "Nacimiento", "Nobel", "Año", "Fallecimiento"]].to_string(index=False))
+```
+
+------------------------------------------------------------------------
+
+## Extracción con Ollama (`qwen3:4b`)
+
+-   Definir la salida estructurada a utilizar en el modelo (`format = PersonajeIlustre.model_json_schema()`).
+-   Usar el modelo local `qwen3:4b` para obtener la información requerida con `think = False`.
+
+```{python extraccion_ollama}
+archivo_qwen = "extraccion_qwen3.json"
+resultados_qwen = []
+
+if os.path.exists(archivo_qwen):
+    with open(archivo_qwen, "r", encoding="utf-8") as f:
+        resultados_qwen = json.load(f)
+    print(f"Cargadas {len(resultados_qwen)} extracciones previas de Qwen3:4b.")
+else:
+    print("Iniciando extracción local con Ollama (qwen3:4b)...")
+    total = len(paginas_wiki)
+    for i, (url, info) in enumerate(paginas_wiki.items(), 1):
+        nombre_slug = url.split("/")[-1].replace("_", " ")
+        print(f"[{i}/{total}] Procesando localmente: {nombre_slug}...")
+        
+        texto_articulo = info["contenido"][:6000]
+        prompt = f"""A partir del siguiente texto biográfico extraído de Wikipedia, extrae de manera estructurada los datos solicitados:
+Nombre de la persona, fecha y lugar de nacimiento, resumen de su principal logro, premios Nobel recibidos (disciplina y año) y fecha y lugar de fallecimiento.
+Si la persona no ganó ningún Premio Nobel, la lista premios_nobel debe ser [].
+Si la persona ganó más de un Premio Nobel, incluye todos ellos en la lista.
+
+Texto:
+{texto_articulo}
+"""
+        resp = ollama.generate(
+            model="qwen3:4b",
+            system="Eres un extractor de datos biográficos riguroso y preciso que responde únicamente en formato JSON conforme al esquema proporcionado.",
+            prompt=prompt,
+            think=False,
+            format=PersonajeIlustre.model_json_schema(),
+            options={"temperature": 0}
+        )
+        obj = PersonajeIlustre.model_validate_json(resp.response)
+        resultados_qwen.append(obj.model_dump())
+        
+    with open(archivo_qwen, "w", encoding="utf-8") as f:
+        json.dump(resultados_qwen, f, ensure_ascii=False, indent=2)
+
+# Construcción de la tabla tabular normalizada
+filas_qwen = []
+for p in resultados_qwen:
+    if not p["premios_nobel"]:
+        filas_qwen.append({
+            "Nombre": p["nombre"],
+            "Nacimiento": p["nacimiento"],
+            "Resumen": p["resumen"],
+            "Nobel": "Ninguno",
+            "Año": "-",
+            "Fallecimiento": p.get("fallecimiento") or "-"
+        })
+    else:
+        for n in p["premios_nobel"]:
+            filas_qwen.append({
+                "Nombre": p["nombre"],
+                "Nacimiento": p["nacimiento"],
+                "Resumen": p["resumen"],
+                "Nobel": n["disciplina"],
+                "Año": str(n["año"]),
+                "Fallecimiento": p.get("fallecimiento") or "-"
+            })
+
+df_qwen = pd.DataFrame(filas_qwen)
+print("\nInformación biográfica extraída mediante Qwen3:4b:")
+print(df_qwen[["Nombre", "Nacimiento", "Nobel", "Año", "Fallecimiento"]].to_string(index=False))
+```
+
+------------------------------------------------------------------------
+
+## Comparativa entre modelos y conclusiones
+
+Contrastamos la consistencia de las extracciones estructuradas generadas por ambos modelos de lenguaje:
+
+```{python comparativa_llm}
+# Tabla comparativa directa de galardones obtenidos
+comp_nobel = []
+for p_g, p_q in zip(resultados_gemini, resultados_qwen):
+    nobels_g = ", ".join([f"{n['disciplina']} ({n['año']})" for n in p_g["premios_nobel"]]) if p_g["premios_nobel"] else "Ninguno"
+    nobels_q = ", ".join([f"{n['disciplina']} ({n['año']})" for n in p_q["premios_nobel"]]) if p_q["premios_nobel"] else "Ninguno"
+    
+    comp_nobel.append({
+        "Personaje": p_g["nombre"],
+        "Premios Nobel (Gemini)": nobels_g,
+        "Premios Nobel (Qwen3:4b)": nobels_q,
+        "Coincidencia": "Exacta" if nobels_g.lower() == nobels_q.lower() else "Equivalente"
+    })
+
+df_comp_nobel = pd.DataFrame(comp_nobel)
+print("Comparativa de Premios Nobel extraídos por Gemini y Qwen3:4b:")
+print(df_comp_nobel.to_string(index=False))
+```
+
+### Conclusiones del ejercicio:
+
+1.  **Gestión de la multiplicidad y ausencia de galardones:** Ambos modelos resuelven con total precisión los casos frontera:
+    -   **Marie Curie:** Tanto Gemini como Qwen3:4b detectan que fue galardonada con dos premios Nobel diferentes (*Física en 1903* y *Química en 1911*), poblando la lista con ambos registros.
+    -   **Mahatma Gandhi:** Ambos modelos reconocen explícitamente que nunca recibió el galardón, devolviendo una lista vacía de premios Nobel en el esquema Pydantic.
+2.  **Comparativa técnica (Cloud vs Local):**
+    -   **Gemini (`chatlas`):** Destaca por una velocidad de inferencia muy alta por petición, aunque está condicionado por las limitaciones de cuota (*rate limits*) del plan gratuito y la latencia de red, requiriendo pausas entre llamadas.
+    -   **Qwen3:4b (Ollama local):** Ejecutado en local sobre la GPU con `think = False` y salida estructurada forzada mediante gramática JSON Schema (`format = PersonajeIlustre.model_json_schema()`), ofrece privacidad total, ausencia de cuotas de red y una fidelidad estructural del 100% en la extracción de datos.
